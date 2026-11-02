@@ -10,4 +10,4 @@ One line per project and per agent. Read the page for your task; update it and i
 ## Agents
 | Page | Agent | Status |
 |---|---|---|
-| (built in) | Chief of Staff (`.claude/agents/chief-of-staff.md`) | Ready. |
+| (built in) | Chief of Staff, named in about-me.md (`.claude/agents/chief-of-staff.md`) | Ready. |
