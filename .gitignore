@@ -1,0 +1,9 @@
+.env
+.env.*
+!.env.example
+.DS_Store
+.claude/settings.local.json
+# Personal notes you don't want in git: uncomment the lines you need
+# brain/about-me.md
+# brain/inbox/
+# brain/state/
