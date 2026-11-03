@@ -1,0 +1,18 @@
+{
+  "extraKnownMarketplaces": {
+    "claude-plugins-official": {
+      "source": { "source": "github", "repo": "anthropics/claude-plugins-official" }
+    },
+    "caveman": {
+      "source": { "source": "github", "repo": "JuliusBrussee/caveman" }
+    }
+  },
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true,
+    "claude-security@claude-plugins-official": true,
+    "caveman@caveman": true
+  },
+  "env": {
+    "CAVEMAN_DEFAULT_MODE": "off"
+  }
+}

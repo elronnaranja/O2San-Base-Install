@@ -37,6 +37,12 @@ brain/inbox/               drop zone (archive/ instead of deleting)
 
 Each agent you add with `/new-agent` gets its own room in `brain/`.
 
+## Add-ons (installed with the folder)
+Claude Code offers these when you open the folder (say yes to trust the folder):
+- **superpowers**: planning, testing and checking habits for building things.
+- **claude-security**: scans code for security holes.
+- **caveman**: short replies to save tokens. Off by default; type `/caveman` to turn it on.
+
 ## Safety defaults
 Asks before anything sent, public or paid. No passwords or keys in files (use `.env`, never committed). Never deletes; archives instead. Plain language.
 
