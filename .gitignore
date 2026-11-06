@@ -3,6 +3,10 @@
 !.env.example
 .DS_Store
 brain/.obsidian/workspace*
+*.pem
+*.key
+credentials*.json
+token*.json
 .claude/settings.local.json
 # Personal notes you don't want in git: uncomment the lines you need
 # brain/about-me.md
