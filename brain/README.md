@@ -4,8 +4,8 @@ The office's memory. The Chief of Staff (and every agent added later) reads it b
 
 ## Rules
 1. **Read first:** `about-me.md`, `RULES.md`, `state/INDEX.md` and the state page for your task.
-2. **Work output goes here**, in your room (map below). Never keep findings only in chat.
-3. **Learn once, everyone knows.** Lasting preferences from the user go in `decisions.md` (their words + date) and as one line in `RULES.md` → My rules. Corrections from `/teach` go in `lessons/<agent>.md`.
+2. **Work output goes here**, in your room (map below; the Chief uses `reports/`, including drafts). Never keep findings only in chat.
+3. **Learn once, everyone knows.** Lasting preferences from the user go in `decisions.md` (their words + date) and as one line in `RULES.md` → My rules. Corrections from `/teach` go in `lessons/<agent>.md`. Anything you work out yourself is only a proposal: it goes in `inbox/` and becomes official after the user's yes.
 4. **Never overwrite another agent's file.** Append, or make a new dated file.
 5. **Sent, public or paid = approval** in `approvals.md` first.
 6. **Never delete.** Move to `inbox/archive/`.
@@ -13,7 +13,7 @@ The office's memory. The Chief of Staff (and every agent added later) reads it b
 8. **No secrets.** No passwords, keys, tokens, card or account numbers anywhere in here.
 
 ## Map
-One room for now: the Chief's. Each agent added with `/new-agent` gets its own room and a row here.
+It starts with one room: the Chief's. Each agent added with `/new-agent` gets its own room and a row here.
 
 | Path | Owner | What lives here |
 |---|---|---|
@@ -27,4 +27,4 @@ One room for now: the Chief's. Each agent added with `/new-agent` gets its own r
 | `reports/` | chief-of-staff | Longer write-ups and summaries |
 | `inbox/` | user | Drop zone; the Chief sorts it. `inbox/archive/` holds anything retired |
 
-Works as a plain folder, or open it in Obsidian if you like linked notes (`[[page-name]]`).
+Works as a plain folder. For linked notes (`[[page-name]]`), install Obsidian, choose "Open folder as vault" and pick this `brain` folder.

@@ -23,11 +23,11 @@ Only run this because the user asked. Create exactly one agent.
    model: inherit
    ---
    You are <name> (<nickname>). Your one job: <job>.
-   Before each task read brain/about-me.md, brain/RULES.md, brain/lessons/<name>.md (if it exists) and brain/state/agent-<name>.md.
+   Before each task read brain/about-me.md, brain/RULES.md, brain/lessons/<name>.md (if it exists), brain/state/INDEX.md, brain/state/agent-<name>.md and the state page for the task.
    Your work goes in brain/<room>/ (file names YYYY-MM-DD-short-slug.md).
    How you work: <steps>. Good result: <example>.
    Ask first: <list>. Never: put secrets in files, delete files, send or publish anything (the Chief puts those in brain/approvals.md).
-   At the end: update brain/state/agent-<name>.md and report to the Chief of Staff.
+   At the end: update your state page and its line in brain/state/INDEX.md, and report to the Chief of Staff.
    ```
 4. Create the room `brain/<room>/` (with a one-line `README.md`), `brain/state/agent-<name>.md` from `brain/state/_template.md`, its line under "Agents" in `brain/state/INDEX.md`, and its row in the map in `brain/README.md`.
 5. Tell the user: the agent exists, the Chief hands it matching work, and `/teach <name>: ...` corrects it. Suggest a fresh session to try it.

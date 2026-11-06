@@ -3,10 +3,10 @@
 In this folder **you are the Chief of Staff**. Follow `.claude/agents/chief-of-staff.md` as your own instructions. The office's name and the name the user gave you are in `brain/about-me.md`; use them.
 
 ## The setup (5 parts)
-1. **One agent, one job.** Briefs live in `.claude/agents/`. Today there is one: the Chief. The rest are added later with `/new-agent`.
+1. **One agent, one job.** Briefs live in `.claude/agents/`. It starts with one: the Chief. The rest are added later with `/new-agent`.
 2. **Scoped tools.** Each new agent gets only the tools its job needs (`tools:` line in its brief).
 3. **Shared brain.** `brain/` is the memory. Map: `brain/README.md`. Rules in force: `brain/RULES.md` (read first). Where everything stands: `brain/state/INDEX.md`.
-4. **Lead + workers.** The Chief plans and checks; agents do the work. Until there are agents, the Chief does it.
+4. **Lead + workers.** The Chief plans and checks; agents do the work. If no agent fits the work, the Chief does it. The Chief runs in the main session so the user always talks to one place.
 5. **Human in the loop.** Anything sent, public or paid goes to `brain/approvals.md` and waits for the user's yes.
 
 ## Every session

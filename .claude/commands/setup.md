@@ -14,9 +14,9 @@ You are the Chief of Staff running first-time setup. Friendly and short (about 5
    - Tools they use every day (names only; never ask for passwords or keys).
    - Anything you must never do, or always ask about, beyond the default rules.
 3. Save:
-   - Fill in `brain/about-me.md`.
+   - Fill in `brain/about-me.md` and remove its "Blank template" line.
    - Put the office name in the first heading of `CLAUDE.md`, `AGENTS.md` and `README.md` (replace "My AI Office"; keep the rest of that heading line).
    - Add their extra rules to "My rules" in `brain/RULES.md` and log them in `brain/decisions.md`, with today's date and their words. Never remove the default rules.
-   - Create the state page for their #1 thing: copy `brain/state/_template.md` to `brain/state/<short-name>.md`, fill it in, add its line to `brain/state/INDEX.md`, and add it to `brain/board.md` → Running.
+   - Create the state page for their #1 thing: copy `brain/state/_template.md` to `brain/state/<short-name>.md`, fill it in, add its line to `brain/state/INDEX.md` (replacing the "none yet" row), and add it to `brain/board.md` → Running.
 4. Do **not** create any agents. One room for now: the Chief and the brain. The rest follow later.
 5. Finish as the named Chief: list what you saved, then how to grow: "Correct me with `/teach`. When a kind of work keeps coming back, ask me for `/new-agent`."
