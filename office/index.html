@@ -9,6 +9,8 @@
   THE TEAM LIST is the <script id="team"> block below. /setup and /new-agent edit it; you can too.
   Each agent: { "id": file name in .claude/agents/, "name": shown on the tag, "title": its one job, "seed": any whole number }
   The seed (the "look" number in a Spawn command) picks the agent's look and desk at random, the same way every time. A new seed = a new look.
+  Optional per agent: "look" (style, head, hair, skin, shirt, pants, cap) and "at" (a desk number 0-8, or [x, z] to stand there).
+  You set those on the page (click someone → Customize look, or drag them), then save with the /office command it gives you.
   The room has 8 free desks. Room full? Ask your Chief to "upgrade the office" (a bigger room, a second room, new furniture).
 -->
 <script id="team" type="application/json">
@@ -51,8 +53,17 @@
   .hint { color: var(--muted); font-size: 13px; margin: 10px 0 0; line-height: 1.4; }
   .hint code { font-family: ui-monospace, Menlo, Consolas, monospace; color: var(--text); }
   .help { position: fixed; left: 16px; bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); color: var(--muted); font-size: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; }
+  .card { max-height: calc(100vh - 120px); overflow: auto; }
+  .opts { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 2px; }
+  .opt { padding: 4px 9px; font-size: 13px; border-radius: 8px; }
+  .opt[aria-pressed="true"] { border-color: var(--cyan); background: #1d2a33; }
+  .sw { width: 24px; height: 24px; padding: 0; border-radius: 50%; border: 2px solid rgba(255,255,255,.22); }
+  .sw[aria-pressed="true"] { border-color: #fff; box-shadow: 0 0 0 2px var(--cyan); }
+  .btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .pending { left: 16px; right: auto; top: calc(env(safe-area-inset-top, 0px) + 92px); bottom: auto; }
+  .pending b { display: block; margin-bottom: 4px; }
   .msg { position: fixed; inset: 0; display: grid; place-items: center; color: var(--muted); letter-spacing: .1em; }
-  @media (max-width: 560px) { .help { display: none; } .card { bottom: 12px; } }
+  @media (max-width: 560px) { .help { display: none; } .card { bottom: 12px; } .pending { top: auto; bottom: 12px; } }
 </style>
 
 <div id="office"><div class="msg" id="loading">LOADING THE OFFICE…</div></div>
@@ -83,9 +94,18 @@
   <h2 id="infoName"></h2>
   <p class="sub" id="infoTitle"></p>
   <p class="hint" id="infoBody"></p>
+  <div class="btns" id="infoBtns"><button id="lookBtn" type="button">🎨 Customize look</button></div>
+  <div id="lookEd" hidden></div>
 </div>
 
-<div class="help">Drag to turn · scroll or pinch to zoom · click someone</div>
+<div class="card pending" id="pending" hidden>
+  <b>Changed in this browser only</b>
+  <span class="hint">To keep it for good, paste this into Claude Code in this office's folder:</span>
+  <div class="cmd"><span id="pendCmd"></span><button id="copyPend" type="button">Copy</button></div>
+  <div class="btns"><button id="discard" type="button">Undo all changes</button></div>
+</div>
+
+<div class="help">Drag the room to turn · drag someone to move them · scroll to zoom · click someone</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -96,6 +116,22 @@
   try { TEAM = JSON.parse(document.getElementById('team').textContent); }
   catch (e) { document.getElementById('loading').textContent = 'THE TEAM LIST HAS A TYPO. ASK YOUR CHIEF TO FIX office/index.html.'; return; }
   const agents = (TEAM.agents || []).filter(a => a && a.name);
+  // Changes made on this page (looks, seats) stay in this browser until the /office command saves them into this file.
+  const EDIT_KEY = 'ai-office-edits:' + location.pathname;
+  let edits = {};
+  try { edits = JSON.parse(localStorage.getItem(EDIT_KEY) || '{}') || {}; } catch (e) { edits = {}; }
+  function saveEdits() { try { localStorage.setItem(EDIT_KEY, JSON.stringify(edits)); } catch (e) {} }
+  agents.forEach(a => { a.baseLook = Object.assign({}, a.look || {}); a.baseAt = a.at; });
+  function applyEdits() { agents.forEach(a => { const e = edits[a.id] || {}; a.look = Object.assign({}, a.baseLook, e.look || {}); a.at = e.at !== undefined ? e.at : a.baseAt; }); }
+  // Forget edits the file already holds (after /office saved them and the page was reloaded).
+  Object.keys(edits).forEach(id => {
+    const a = agents.find(x => x.id === id), e = edits[id];
+    if (!a || !e || typeof e !== 'object') { delete edits[id]; return; }
+    if (e.look) { Object.keys(e.look).forEach(k => { if (a.baseLook[k] === e.look[k]) delete e.look[k]; }); if (!Object.keys(e.look).length) delete e.look; }
+    if (e.at !== undefined && JSON.stringify(e.at) === JSON.stringify(a.baseAt)) delete e.at;
+    if (!Object.keys(e).length) delete edits[id];
+  });
+  saveEdits(); applyEdits();
   const officeName = TEAM.office || 'My AI Office';
   document.title = officeName;
   document.getElementById('officeName').textContent = officeName;
@@ -114,6 +150,7 @@
     const r = rng(a.seed);
     const L = { skin: pick(r, SKIN), hair: pick(r, HAIR), shirt: pick(r, SHIRT), pants: pick(r, PANTS), style: pick(r, STYLE), head: pick(r, HEAD), cap: pick(r, CAPS) };
     if (a.chief) Object.assign(L, { shirt: '#ff8a2a', head: 'headset', style: 'short' });
+    Object.entries(a.look || {}).forEach(([k, v]) => { if (k in L && typeof v === 'string') L[k] = v; });
     return L;
   }
 
@@ -129,15 +166,25 @@
     const free = DESKS.map((_, i) => i).slice(1);
     let standing = 0;
     list.forEach(a => {
+      a.free = null; a.spot = undefined;
       if (a.chief) { a.desk = 0; return; }
       if (!free.length) { a.desk = null; a.spot = standing++; return; }
       const i = Math.floor(rng(Number(a.seed) * 7 + 3)() * free.length);
       a.desk = free.splice(i, 1)[0];
     });
+    // Seats someone picked by dragging: "at" is a desk number, or [x, z] to stand there. Whoever had that desk swaps.
+    list.forEach(a => {
+      if (Array.isArray(a.at) && a.at.length === 2 && a.at.every(n => isFinite(n))) { a.desk = null; a.spot = undefined; a.free = a.at.map(Number); return; }
+      if (!Number.isInteger(a.at) || a.at < 0 || a.at >= DESKS.length || a.at === a.desk) return;
+      const o = list.find(b => b !== a && b.desk === a.at);
+      if (o) { o.desk = a.desk; o.spot = a.spot; o.free = a.free; }
+      a.desk = a.at; a.spot = undefined; a.free = null;
+    });
   }
   seatAll(agents);
   const count = n => n + (n === 1 ? ' agent' : ' agents');
-  document.getElementById('headcount').textContent = count(agents.length) + ' · ' + Math.max(0, 8 - agents.filter(a => !a.chief).length) + ' free desks';
+  function renderCount() { document.getElementById('headcount').textContent = count(agents.length) + ' · ' + Math.max(0, DESKS.length - agents.filter(a => a.desk != null).length) + ' free desks'; }
+  renderCount();
 
   /* ---------------- 3D ---------------- */
   if (!window.THREE) { document.getElementById('loading').textContent = 'THE 3D VIEW NEEDS THE INTERNET ONCE TO LOAD.'; return; }
@@ -417,7 +464,7 @@
     const L = lookFor(a);
     const p = person(a, L, ghost);
     if (a.desk != null) { p.desk = desk(a.desk, ghost); p.home = p.desk.seat.clone(); p.homeYaw = p.desk.yaw; }
-    else { const [x, z] = STAND[(a.spot || 0) % STAND.length]; p.home = new THREE.Vector3(x, 0, z); p.homeYaw = Math.atan2(-x, -z); }
+    else { const [x, z] = a.free || STAND[(a.spot || 0) % STAND.length]; p.home = new THREE.Vector3(x, 0, z); p.homeYaw = Math.atan2(-x, -z); }
     p.root.position.copy(p.home); p.root.rotation.y = p.homeYaw;
     p.state = 'home'; p.next = 6 + rng(Number(a.seed) + 11)() * 20;
     return p;
@@ -427,6 +474,7 @@
   // Now and then someone gets up, walks to the Brain to save their work, and goes back.
   function step(p, dt) {
     if (p.ghost) { setPose(p, p.desk ? 'sit' : 'stand', clock); return; }
+    if (p.state === 'drag') { setPose(p, 'walk', clock * .5); return; }
     const sitting = !!p.desk;
     if (p.state === 'home') {
       setPose(p, sitting ? 'sit' : 'stand', clock + p.a.seed);
@@ -503,7 +551,9 @@
   const info = $('infoCard');
   $('infoClose').onclick = () => { info.hidden = true; };
   function showInfo(id) {
+    $('lookEd').hidden = true; infoFor = null;
     if (id === 'brain') {
+      $('infoBtns').hidden = true;
       $('infoName').textContent = 'The Brain';
       $('infoTitle').textContent = 'The brain/ folder: the office\'s shared memory';
       $('infoBody').innerHTML = 'Every agent reads it before working and writes back after. Numbered rooms: <code>00-Core</code> (you and the memory rules), <code>03-AI-Office</code> (rules and decisions), <code>08-Inbox</code>, <code>10-Office</code> (board, approvals, state pages, each agent\'s room) and more. Open the <code>brain</code> folder as a vault in Obsidian to read it.';
@@ -511,27 +561,123 @@
       const a = agents.find(x => x.id === id) || (draft && draft.id === id ? draft : null); if (!a) return;
       $('infoName').textContent = a.name;
       $('infoTitle').textContent = a.title || '';
+      $('infoBtns').hidden = a === draft; infoFor = a === draft ? null : a;
       $('infoBody').innerHTML = a === draft ? 'Not hired yet. Copy the command in the New agent card.' :
         `Brief: <code>.claude/agents/${a.id}.md</code><br>State: <code>brain/10-Office/state/agent-${a.id}.md</code>` + (a.desk == null ? '<br>No free desk. Ask your Chief to upgrade the office.' : '') +
         `<br><br>Talk to it in a fresh session: “You are ${a.name}: follow .claude/agents/${a.id}.md.”`;
     }
     info.hidden = false;
   }
+  let infoFor = null;
+  const OPTIONS = [
+    ['Hair style', 'style', ['short', 'bob', 'long', 'ponytail', 'bun', 'curly']],
+    ['On the head', 'head', ['none', 'glasses', 'cap', 'beanie', 'headset']],
+    ['Hair', 'hair', HAIR], ['Skin', 'skin', SKIN], ['Shirt', 'shirt', [...new Set([...SHIRT, '#ff8a2a', '#efe9dc', '#14121c'])]],
+    ['Pants', 'pants', PANTS], ['Hat color', 'cap', CAPS]
+  ];
+  function lookEditor() {
+    const a = infoFor, ed = $('lookEd'); if (!a) return;
+    const L = lookFor(a); ed.innerHTML = '';
+    OPTIONS.forEach(([label, key, list]) => {
+      const l = document.createElement('label'); l.textContent = label; ed.append(l);
+      const row = document.createElement('div'); row.className = 'opts';
+      list.forEach(v => {
+        const b = document.createElement('button'); b.type = 'button'; const color = v[0] === '#';
+        b.className = color ? 'sw' : 'opt'; if (color) { b.style.background = v; b.setAttribute('aria-label', label + ' ' + v); } else b.textContent = v;
+        b.setAttribute('aria-pressed', String(L[key] === v));
+        b.onclick = () => { setEdit(a.id, { look: { [key]: v } }); lookEditor(); };
+        row.append(b);
+      });
+      ed.append(row);
+    });
+    const btns = document.createElement('div'); btns.className = 'btns';
+    const rnd = document.createElement('button'); rnd.type = 'button'; rnd.textContent = '🎲 Random look';
+    rnd.onclick = () => { const r = Math.random; setEdit(a.id, { look: { style: pick(r, OPTIONS[0][2]), head: pick(r, OPTIONS[1][2]), hair: pick(r, HAIR), skin: pick(r, SKIN), shirt: pick(r, OPTIONS[4][2]), pants: pick(r, PANTS), cap: pick(r, CAPS) } }); lookEditor(); };
+    const rst = document.createElement('button'); rst.type = 'button'; rst.textContent = 'Reset look';
+    rst.onclick = () => { if (edits[a.id]) { delete edits[a.id].look; if (!Object.keys(edits[a.id]).length) delete edits[a.id]; } saveEdits(); applyEdits(); rebuild(); lookEditor(); };
+    btns.append(rnd, rst); ed.append(btns);
+  }
+  $('lookBtn').onclick = () => { const ed = $('lookEd'); ed.hidden = !ed.hidden; if (!ed.hidden) lookEditor(); };
+
+  /* ---- your changes: kept in this browser, saved for good with /office ---- */
+  function setEdit(id, patch) {
+    const e = edits[id] || (edits[id] = {});
+    if (patch.look) e.look = Object.assign(e.look || {}, patch.look);
+    if ('at' in patch) e.at = patch.at;
+    saveEdits(); applyEdits(); rebuild();
+  }
+  function unplace(p) {
+    scene.remove(p.root, p.tag); if (p.desk) scene.remove(p.desk.g);
+    const i = sprites.findIndex(s => s[0] === p.tag); if (i >= 0) sprites.splice(i, 1);
+    for (let j = pickables.length - 1; j >= 0; j--) if (pickables[j].userData.pick === p.a.id) pickables.splice(j, 1);
+  }
+  function rebuild() {
+    people.splice(0).forEach(unplace); seatAll(agents); agents.forEach(a => people.push(place(a, false)));
+    renderCount(); renderPending(); if (ghost) newDraft(true);
+  }
+  function renderPending() {
+    const has = Object.keys(edits).length > 0;
+    $('pending').hidden = !has;
+    $('pendCmd').textContent = has ? '/office ' + JSON.stringify(edits) : '';
+  }
+  async function copyFrom(btn, el) {
+    try { await navigator.clipboard.writeText(el.textContent); btn.textContent = 'Copied'; }
+    catch (e) { const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = 'Press ⌘C'; }
+    setTimeout(() => { btn.textContent = 'Copy'; }, 1800);
+  }
+  $('copyPend').onclick = () => copyFrom($('copyPend'), $('pendCmd'));
+  $('discard').onclick = () => { edits = {}; saveEdits(); applyEdits(); rebuild(); if (infoFor && !$('lookEd').hidden) lookEditor(); };
+  renderPending();
+
   const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+  const FLOOR = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), Y = new THREE.Vector3(0, 1, 0);
+  const seatPos = i => { const [x, z, yaw] = DESKS[i]; return new THREE.Vector3(0, 0, 1).applyAxisAngle(Y, yaw).add(new THREE.Vector3(x, 0, z)); };
+  const dropRing = new THREE.Mesh(new THREE.RingGeometry(.9, 1.1, 40), new THREE.MeshBasicMaterial({ color: 0xffd34d, transparent: true, opacity: .9, side: THREE.DoubleSide }));
+  dropRing.rotation.x = -Math.PI / 2; dropRing.visible = false; scene.add(dropRing);
+  function aim(e) { const r = cv.getBoundingClientRect(); ptr.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1); ray.setFromCamera(ptr, camera); }
+  // Where a drop lands: a desk (number) when close to one, else a spot on the floor, kept off the Brain and the walls.
+  function dropAt(pt) {
+    let best = -1, bd = 1.6; DESKS.forEach((_, i) => { const d = seatPos(i).distanceTo(new THREE.Vector3(pt.x, 0, pt.z)); if (d < bd) { bd = d; best = i; } });
+    if (best >= 0) return best;
+    let x = Math.max(-S + 1.2, Math.min(S - 1.2, pt.x)), z = Math.max(-S + 1.2, Math.min(S - 1.2, pt.z));
+    const rr = Math.hypot(x, z); if (rr < 3.2) { const k = 3.2 / (rr || 1); x = rr ? x * k : 3.2; z *= k; }
+    return [Math.round(x * 10) / 10, Math.round(z * 10) / 10];
+  }
   const cv = renderer.domElement;
   let down = null, pinch = null; const touches = new Map();
-  cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); touches.set(e.pointerId, e); down = { x: e.clientX, y: e.clientY, az: azimuth, moved: false }; if (touches.size === 2) { const [p, q] = [...touches.values()]; pinch = { d: Math.hypot(p.clientX - q.clientX, p.clientY - q.clientY), z: zoom }; } });
+  cv.addEventListener('pointerdown', e => {
+    cv.setPointerCapture(e.pointerId); touches.set(e.pointerId, e); down = { x: e.clientX, y: e.clientY, az: azimuth, moved: false };
+    if (touches.size === 2) { const [p, q] = [...touches.values()]; pinch = { d: Math.hypot(p.clientX - q.clientX, p.clientY - q.clientY), z: zoom }; down.person = null; return; }
+    aim(e); const hit = ray.intersectObjects(pickables, false).find(h => h.object.visible);
+    down.person = hit ? people.find(q => q.a.id === hit.object.userData.pick) || null : null;
+  });
   cv.addEventListener('pointermove', e => {
     if (!touches.has(e.pointerId)) return; touches.set(e.pointerId, e);
     if (pinch && touches.size === 2) { const [p, q] = [...touches.values()]; zoom = Math.min(3.5, Math.max(.6, pinch.z * Math.hypot(p.clientX - q.clientX, p.clientY - q.clientY) / pinch.d)); placeCamera(); return; }
-    if (!down) return; const dx = e.clientX - down.x; if (Math.abs(dx) > 4) { down.moved = true; cv.classList.add('drag'); }
+    if (!down) return; const dx = e.clientX - down.x, dy = e.clientY - down.y;
+    if (down.person) {
+      const p = down.person;
+      if (!down.moved && Math.hypot(dx, dy) > 5) { down.moved = true; p.state = 'drag'; cv.classList.add('drag'); }
+      if (!down.moved) return;
+      aim(e); const pt = new THREE.Vector3(); if (!ray.ray.intersectPlane(FLOOR, pt)) return;
+      p.root.position.set(pt.x, .45, pt.z); p.root.rotation.y = azimuth;
+      const at = dropAt(pt); dropRing.visible = true;
+      if (typeof at === 'number') { const sp = seatPos(at); dropRing.position.set(sp.x, .09, sp.z); } else dropRing.position.set(at[0], .09, at[1]);
+      return;
+    }
+    if (Math.abs(dx) > 4) { down.moved = true; cv.classList.add('drag'); }
     azimuth = down.az - dx * .008; placeCamera();
   });
   const up = e => {
     touches.delete(e.pointerId); cv.classList.remove('drag'); if (touches.size < 2) pinch = null;
-    if (down && !down.moved && e.type === 'pointerup') {
-      const r = cv.getBoundingClientRect(); ptr.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
-      ray.setFromCamera(ptr, camera); const hit = ray.intersectObjects(pickables, false).find(h => h.object.visible);
+    dropRing.visible = false;
+    if (down && down.person && down.moved) {
+      const p = down.person, pt = new THREE.Vector3(); aim(e);
+      const at = e.type === 'pointerup' && ray.ray.intersectPlane(FLOOR, pt) ? dropAt(pt) : undefined;
+      if (at === undefined || at === p.a.desk) { p.state = 'home'; p.root.position.copy(p.home); p.root.rotation.y = p.homeYaw; }
+      else setEdit(p.a.id, { at });
+    } else if (down && !down.moved && e.type === 'pointerup') {
+      aim(e); const hit = ray.intersectObjects(pickables, false).find(h => h.object.visible);
       if (hit) showInfo(hit.object.userData.pick);
     }
     down = null;
@@ -555,5 +701,8 @@
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
+  // For automated checks: where someone is on screen, in page pixels.
+  window.__office = { screenOf(id) { const p = people.find(q => q.a.id === id); if (!p) return null; const v = p.root.position.clone().setY(1.2).project(camera), r = cv.getBoundingClientRect(); return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; },
+    seats() { return agents.map(a => ({ id: a.id, desk: a.desk, free: a.free })); }, deskScreen(i) { const v = seatPos(i).setY(.5).project(camera), r = cv.getBoundingClientRect(); return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; } };
 })();
 </script>

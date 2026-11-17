@@ -23,6 +23,8 @@ Double-click `office/index.html`. It opens in your browser: one room, the Brain 
 
 **Spawn a new agent:** press **+ Spawn agent**. A see-through new hire appears at a random free desk with a random name and look (press 🎲 for another). Type its one job, press **Copy**, and paste the command into Claude Code. The Chief writes its brief and brain room and gives it that desk. Reload the page to see it.
 
+**Make it yours:** click anyone and press **Customize look** (hair, hat, skin, clothes), or drag them to another desk or spot. Changes show at once and stay in that browser; the page gives you a `/office …` command to paste into Claude Code so they're saved in the office for good.
+
 The room has 8 free desks. Full? Say "upgrade the office". The room is yours to redesign: more desks, a second room, your colors.
 
 ## Grow it
@@ -36,7 +38,7 @@ CLAUDE.md                  Chief of Staff instructions for Claude Code
 AGENTS.md                  same, for ChatGPT Codex and other tools
 office/index.html          your 3D office (team list inside; /new-agent adds to it)
 .claude/agents/            the team (starts with chief-of-staff.md)
-.claude/commands/          /setup, /teach, /new-agent
+.claude/commands/          /setup, /teach, /new-agent, /office
 .claude/playbooks/         quick commands ("Status", "What needs me?", "Open the office")
 .claude/skills/            skills you add later
 tools/                     API scripts you add later (keys in .env)

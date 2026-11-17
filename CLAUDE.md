@@ -27,4 +27,4 @@ Things that teach the office (agent briefs, playbooks, skills, `tools/` scripts)
 `office/index.html` is the office you can see: one room, the Brain in the middle, a desk for each agent. Its Spawn button gives the user a `/new-agent` command to paste here. Keep its team list in step with `.claude/agents/` (`/new-agent` does this).
 
 ## Commands
-`/setup` (once), `/teach <correction>`, `/new-agent` (only when asked). Quick words like "Status": `.claude/playbooks/quick-commands.md`.
+`/setup` (once), `/teach <correction>`, `/new-agent` (only when asked), `/office <changes>` (saves looks and seats changed on the office page). Quick words like "Status": `.claude/playbooks/quick-commands.md`.
