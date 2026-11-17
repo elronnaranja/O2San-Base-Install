@@ -9,9 +9,9 @@
   THE TEAM LIST is the <script id="team"> block below. /setup and /new-agent edit it; you can too.
   Each agent: { "id": file name in .claude/agents/, "name": shown on the tag, "title": its one job, "seed": any whole number }
   The seed (the "look" number in a Spawn command) picks the agent's look and desk at random, the same way every time. A new seed = a new look.
-  Optional per agent: "look" (style, head, glasses, facial, accessory, hair, skin, shirt, pants, shoes, cap) and "at" (a desk number 0-8, or [x, z] to stand there).
+  Optional per agent: "look" (style, head, glasses, facial, accessory, hair, skin, shirt, pants, shoes, cap) "at" (which desk slot is theirs, 0-8) and "where" (where they are now: "couch-1".."couch-3", "pantry-1", "pantry-2", "cooler", or [x, z] on the floor; leave it out = at their desk).
   You set those on the page (click someone → Customize look, or drag them), then save with the /office command it gives you.
-  The room has 8 free desks. Room full? Ask your Chief to "upgrade the office" (a bigger room, a second room, new furniture).
+  It starts with one table (the Chief's); each new agent brings one, up to 9. Room full? Ask your Chief to "upgrade the office" (a bigger room, a second room, new furniture).
 -->
 <script id="team" type="application/json">
 {
@@ -80,10 +80,12 @@
   .look-acts .main { background: var(--accent); border-color: var(--accent); color: #1a1008; font-weight: 700; }
   .look-note { margin: 0; font-size: 12px; color: var(--muted); }
   .btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-  .pending { left: 16px; right: auto; top: calc(env(safe-area-inset-top, 0px) + 92px); bottom: auto; }
+  .pending { left: 16px; right: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); width: min(340px, calc(100vw - 32px)); padding: 12px 14px; }
+  .pending .cmd { max-height: 72px; overflow: auto; }
+  body:has(#pending:not([hidden])) .help { display: none; }
   .pending b { display: block; margin-bottom: 4px; }
   .msg { position: fixed; inset: 0; display: grid; place-items: center; color: var(--muted); letter-spacing: .1em; }
-  @media (max-width: 560px) { .help { display: none; } .card { bottom: 12px; } .pending { top: auto; bottom: 12px; } }
+  @media (max-width: 560px) { .help { display: none; } .card { bottom: 12px; } .pending { bottom: 12px; } }
 </style>
 
 <div id="office"><div class="msg" id="loading">LOADING THE OFFICE…</div></div>
@@ -140,14 +142,16 @@
   let edits = {};
   try { edits = JSON.parse(localStorage.getItem(EDIT_KEY) || '{}') || {}; } catch (e) { edits = {}; }
   function saveEdits() { try { localStorage.setItem(EDIT_KEY, JSON.stringify(edits)); } catch (e) {} }
-  agents.forEach(a => { a.baseLook = Object.assign({}, a.look || {}); a.baseAt = a.at; });
-  function applyEdits() { agents.forEach(a => { const e = edits[a.id] || {}; a.look = Object.assign({}, a.baseLook, e.look || {}); a.at = e.at !== undefined ? e.at : a.baseAt; }); }
+  agents.forEach(a => { if (Array.isArray(a.at)) { a.where = a.where || a.at; delete a.at; } a.baseLook = Object.assign({}, a.look || {}); a.baseAt = a.at; a.baseWhere = a.where; });
+  function applyEdits() { agents.forEach(a => { const e = edits[a.id] || {}; a.look = Object.assign({}, a.baseLook, e.look || {}); a.at = e.at !== undefined ? e.at : a.baseAt; a.where = e.where !== undefined ? e.where : a.baseWhere; }); }
   // Forget edits the file already holds (after /office saved them and the page was reloaded).
   Object.keys(edits).forEach(id => {
     const a = agents.find(x => x.id === id), e = edits[id];
     if (!a || !e || typeof e !== 'object') { delete edits[id]; return; }
     if (e.look) { Object.keys(e.look).forEach(k => { if (a.baseLook[k] === e.look[k]) delete e.look[k]; }); if (!Object.keys(e.look).length) delete e.look; }
+    if (Array.isArray(e.at)) { e.where = e.at; delete e.at; }
     if (e.at !== undefined && JSON.stringify(e.at) === JSON.stringify(a.baseAt)) delete e.at;
+    if (e.where !== undefined && JSON.stringify(e.where || null) === JSON.stringify(a.baseWhere || null)) delete e.where;
     if (!Object.keys(e).length) delete edits[id];
   });
   saveEdits(); applyEdits();
@@ -194,7 +198,6 @@
     });
     // Seats someone picked by dragging: "at" is a desk number, or [x, z] to stand there. Whoever had that desk swaps.
     list.forEach(a => {
-      if (Array.isArray(a.at) && a.at.length === 2 && a.at.every(n => isFinite(n))) { a.desk = null; a.spot = undefined; a.free = a.at.map(Number); return; }
       if (!Number.isInteger(a.at) || a.at < 0 || a.at >= DESKS.length || a.at === a.desk) return;
       const o = list.find(b => b !== a && b.desk === a.at);
       if (o) { o.desk = a.desk; o.spot = a.spot; o.free = a.free; }
@@ -203,7 +206,7 @@
   }
   seatAll(agents);
   const count = n => n + (n === 1 ? ' agent' : ' agents');
-  function renderCount() { document.getElementById('headcount').textContent = count(agents.length) + ' · ' + Math.max(0, DESKS.length - agents.filter(a => a.desk != null).length) + ' free desks'; }
+  function renderCount() { const free = Math.max(0, DESKS.length - agents.filter(a => a.desk != null).length); document.getElementById('headcount').textContent = count(agents.length) + ' · room for ' + free + ' more'; }
   renderCount();
 
   /* ---------------- 3D ---------------- */
@@ -481,40 +484,58 @@
     const s = reduce ? 0 : 1;
     if (pose === 'sit') { p.body.position.y = -.38; p.legL.rotation.x = p.legR.rotation.x = -1.2; p.armL.rotation.x = -1 + Math.sin(t * 14) * .15 * s; p.armR.rotation.x = -1 + Math.cos(t * 14) * .15 * s; }
     else if (pose === 'walk') { const w = Math.sin(t * 9) * s; p.body.position.y = Math.abs(Math.cos(t * 9)) * .05 * s; p.legL.rotation.x = w * .6; p.legR.rotation.x = -w * .6; p.armL.rotation.x = -w * .5; p.armR.rotation.x = w * .5; }
+    else if (pose === 'lounge') { p.body.position.y = -.38; p.legL.rotation.x = p.legR.rotation.x = -1.2; p.armL.rotation.x = -.5; p.armR.rotation.x = -.5 + Math.sin(t * .8) * .06 * s; }
+    else if (pose === 'sip') { p.body.position.y = 0; p.legL.rotation.x = p.legR.rotation.x = 0; p.armL.rotation.x = 0; const k = Math.max(0, Math.sin(t * .9)) * s; p.armR.rotation.x = -1.2 - k * .9; }
     else if (pose === 'touch') { p.body.position.y = 0; p.legL.rotation.x = p.legR.rotation.x = 0; p.armL.rotation.x = 0; p.armR.rotation.x = -1.6; }
     else { p.body.position.y = 0; p.legL.rotation.x = p.legR.rotation.x = 0; p.armL.rotation.x = p.armR.rotation.x = 0; }
   }
-  // All desks stand in the room from the start, empty or not; people sit at them.
-  const deskObjs = DESKS.map((_, i) => desk(i, false));
-  function paintDesks() { deskObjs.forEach((d, i) => d.screen.material.color.set(agents.some(a => a.desk === i) ? 0x7ef0ff : 0x2a2639)); }
+  // One desk per agent: the Chief's at first, and each new agent brings one. A desk stays put while its owner is elsewhere.
+  let deskObjs = {};
+  function buildDesks() {
+    Object.values(deskObjs).forEach(d => scene.remove(d.g)); deskObjs = {};
+    agents.forEach(a => { if (a.desk != null && !deskObjs[a.desk]) deskObjs[a.desk] = desk(a.desk, false); });
+  }
+  // Screens glow while their owner works there and go dark while they're away.
+  function paintDesks() { agents.forEach(a => { const d = deskObjs[a.desk]; if (d) d.screen.material.color.set(a.where ? 0x2a2639 : 0x7ef0ff); }); }
+  // Places you can drop someone besides a desk: the couch (sit) and the pantry (stand with a drink).
+  const SPOTS = {
+    'couch-1': { x: -7.75, z: 4.7, yaw: Math.PI / 2, pose: 'lounge' }, 'couch-2': { x: -7.75, z: 5.7, yaw: Math.PI / 2, pose: 'lounge' }, 'couch-3': { x: -7.75, z: 6.7, yaw: Math.PI / 2, pose: 'lounge' },
+    'pantry-1': { x: 7.35, z: -7.3, yaw: Math.PI / 2, pose: 'sip' }, 'pantry-2': { x: 7.35, z: -6.0, yaw: Math.PI / 2, pose: 'sip' }, 'cooler': { x: 7.35, z: -4.2, yaw: Math.PI / 2, pose: 'sip' }
+  };
   const STAND = [[-1.2, 7.8], [1.2, 7.8], [3.8, 3.6], [-3.8, 3.6], [3.8, -3.4], [-3.8, -3.4], [7.6, 1.8], [-3.2, 8]];
   const people = [];
   let clock = 0;
   function place(a, ghost) {
     const L = lookFor(a);
     const p = person(a, L, ghost);
-    if (a.desk != null) { p.desk = deskObjs[a.desk]; p.home = p.desk.seat.clone(); p.homeYaw = p.desk.yaw; }
-    else { const [x, z] = a.free || STAND[(a.spot || 0) % STAND.length]; p.home = new THREE.Vector3(x, 0, z); p.homeYaw = Math.atan2(-x, -z); }
+    p.desk = ghost ? (a.desk != null ? desk(a.desk, true) : null) : deskObjs[a.desk] || null;
+    const spot = typeof a.where === 'string' ? SPOTS[a.where] : null, floor = Array.isArray(a.where) && a.where.length === 2 ? a.where.map(Number) : null;
+    if (spot) { p.home = new THREE.Vector3(spot.x, spot.pose === 'lounge' ? .44 : 0, spot.z); p.homeYaw = spot.yaw; p.homePose = spot.pose; }
+    else if (floor) { p.home = new THREE.Vector3(floor[0], 0, floor[1]); p.homeYaw = Math.atan2(-floor[0], -floor[1]); p.homePose = 'stand'; }
+    else if (p.desk) { p.home = p.desk.seat.clone(); p.homeYaw = p.desk.yaw; p.homePose = 'sit'; }
+    else { const [x, z] = STAND[(a.spot || 0) % STAND.length]; p.home = new THREE.Vector3(x, 0, z); p.homeYaw = Math.atan2(-x, -z); p.homePose = 'stand'; }
+    if (p.homePose === 'sip' && !ghost) { const m = new THREE.Mesh(new THREE.CylinderGeometry(.09, .07, .18, 10), lam(0xefe9dc)); m.position.set(0, -.78, .14); p.armR.add(m); }
     p.root.position.copy(p.home); p.root.rotation.y = p.homeYaw;
     p.state = 'home'; p.next = 6 + rng(Number(a.seed) + 11)() * 20;
     return p;
   }
+  buildDesks();
   agents.forEach(a => people.push(place(a, false)));
   paintDesks();
 
   // Now and then someone gets up, walks to the Brain to save their work, and goes back.
   function step(p, dt) {
-    if (p.ghost) { setPose(p, p.desk ? 'sit' : 'stand', clock); return; }
+    if (p.ghost) { setPose(p, p.homePose, clock); return; }
     if (p.state === 'drag') { setPose(p, 'walk', clock * .5); return; }
-    const sitting = !!p.desk;
+    const sitting = p.homePose === 'sit' || p.homePose === 'lounge';
     if (p.state === 'home') {
-      setPose(p, sitting ? 'sit' : 'stand', clock + p.a.seed);
+      setPose(p, p.homePose, clock + p.a.seed);
       p.next -= dt;
       if (p.next <= 0 && !reduce) {
         const ang = Math.atan2(p.home.z, p.home.x);
         p.target = new THREE.Vector3(Math.cos(ang) * 2.6, 0, Math.sin(ang) * 2.6);
         p.from = new THREE.Vector3(p.home.x, 0, p.home.z);
-        if (sitting) p.from.add(new THREE.Vector3(p.home.x, 0, p.home.z).normalize().multiplyScalar(-.9));
+        if (sitting) p.from.add(new THREE.Vector3(Math.sin(p.homeYaw), 0, Math.cos(p.homeYaw)).multiplyScalar(p.homePose === 'lounge' ? .7 : -.9)); // up from the couch, or back from the desk
         p.root.position.copy(p.from); p.state = 'out';
       }
     } else if (p.state === 'out' || p.state === 'back') {
@@ -541,7 +562,7 @@
   let ghost = null, draft = null;
   function removeGhost() {
     if (!ghost) return;
-    scene.remove(ghost.root, ghost.tag, ghost.ring);
+    scene.remove(ghost.root, ghost.tag, ghost.ring); if (ghost.desk) scene.remove(ghost.desk.g);
     const i = sprites.findIndex(s => s[0] === ghost.tag); if (i >= 0) sprites.splice(i, 1);
     for (let j = pickables.length - 1; j >= 0; j--) if (pickables[j].userData.pick === draft.id && !agents.some(a => a.id === draft.id)) pickables.splice(j, 1);
     ghost = null;
@@ -663,10 +684,13 @@
   };
 
   /* ---- your changes: kept in this browser, saved for good with /office ---- */
-  function setEdit(id, patch) {
-    const e = edits[id] || (edits[id] = {});
-    if (patch.look) e.look = Object.assign(e.look || {}, patch.look);
-    if ('at' in patch) e.at = patch.at;
+  function setEdit(id, patch, more) {
+    [[id, patch], ...(more || [])].forEach(([i, pt]) => {
+      const e = edits[i] || (edits[i] = {});
+      if (pt.look) e.look = Object.assign(e.look || {}, pt.look);
+      if ('at' in pt) e.at = pt.at;
+      if ('where' in pt) e.where = pt.where;
+    });
     saveEdits(); applyEdits(); rebuild();
   }
   function unplace(p) {
@@ -675,7 +699,7 @@
     for (let j = pickables.length - 1; j >= 0; j--) if (pickables[j].userData.pick === p.a.id) pickables.splice(j, 1);
   }
   function rebuild() {
-    people.splice(0).forEach(unplace); seatAll(agents); agents.forEach(a => people.push(place(a, false)));
+    people.splice(0).forEach(unplace); seatAll(agents); buildDesks(); agents.forEach(a => people.push(place(a, false)));
     paintDesks(); renderCount(); renderPending(); if (ghost) newDraft(true);
   }
   function renderPending() {
@@ -698,15 +722,18 @@
   const dropRing = new THREE.Mesh(new THREE.RingGeometry(.9, 1.1, 40), new THREE.MeshBasicMaterial({ color: 0xffd34d, transparent: true, opacity: .9, side: THREE.DoubleSide }));
   dropRing.rotation.x = -Math.PI / 2; dropRing.visible = false; scene.add(dropRing);
   function aim(e) { const r = cv.getBoundingClientRect(); ptr.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1); ray.setFromCamera(ptr, camera); }
-  // Where a drop lands: a desk (number) when close to one, else a spot on the floor, kept off the Brain and the walls.
+  // Where a drop lands: an agent's chair, a couch seat, a pantry spot, else a spot on the floor (kept off the Brain and the walls).
   // seatPt: where the pointer meets seat height (what you aim at when you point at a chair); pt: where it meets the floor.
-  function dropAt(pt, seatPt) {
-    let best = -1, bd = 1.9;
-    DESKS.forEach((_, i) => { const sp = seatPos(i), d = Math.min(sp.distanceTo(new THREE.Vector3(seatPt.x, 0, seatPt.z)), sp.distanceTo(new THREE.Vector3(pt.x, 0, pt.z)) + .3); if (d < bd) { bd = d; best = i; } });
-    if (best >= 0) return best;
+  function dropAt(pt, seatPt, who) {
+    const near = (x, z) => Math.min(Math.hypot(x - seatPt.x, z - seatPt.z), Math.hypot(x - pt.x, z - pt.z) + .3);
+    let best = null, bd = 1.9;
+    agents.forEach(a => { if (a.desk == null) return; const sp = seatPos(a.desk), d = near(sp.x, sp.z); if (d < bd) { bd = d; best = { desk: a.desk, x: sp.x, z: sp.z }; } });
+    Object.entries(SPOTS).forEach(([k, v]) => { const d = near(v.x, v.z) + .15; if (d < Math.min(bd, 1.3) && !agents.some(a => a !== who && a.where === k)) { bd = d; best = { spot: k, x: v.x, z: v.z }; } });
+    if (best) return best;
     let x = Math.max(-S + 1.2, Math.min(S - 1.2, pt.x)), z = Math.max(-S + 1.2, Math.min(S - 1.2, pt.z));
     const rr = Math.hypot(x, z); if (rr < 3.2) { const k = 3.2 / (rr || 1); x = rr ? x * k : 3.2; z *= k; }
-    return [Math.round(x * 10) / 10, Math.round(z * 10) / 10];
+    x = Math.round(x * 10) / 10; z = Math.round(z * 10) / 10;
+    return { floor: [x, z], x, z };
   }
   const cv = renderer.domElement;
   let down = null, pinch = null; const touches = new Map();
@@ -726,8 +753,7 @@
       if (!down.moved) return;
       aim(e); const pt = new THREE.Vector3(), sp = new THREE.Vector3(); if (!ray.ray.intersectPlane(FLOOR, pt) || !ray.ray.intersectPlane(SEATS, sp)) return;
       p.root.position.set(sp.x, .45, sp.z); p.root.rotation.y = azimuth;
-      const at = dropAt(pt, sp); dropRing.visible = true;
-      if (typeof at === 'number') { const sp = seatPos(at); dropRing.position.set(sp.x, .09, sp.z); } else dropRing.position.set(at[0], .09, at[1]);
+      const at = dropAt(pt, sp, p.a); dropRing.visible = true; dropRing.position.set(at.x, .09, at.z);
       return;
     }
     if (Math.abs(dx) > 4) { down.moved = true; cv.classList.add('drag'); }
@@ -738,9 +764,13 @@
     dropRing.visible = false;
     if (down && down.person && down.moved) {
       const p = down.person, pt = new THREE.Vector3(), sp = new THREE.Vector3(); aim(e);
-      const at = e.type === 'pointerup' && ray.ray.intersectPlane(FLOOR, pt) && ray.ray.intersectPlane(SEATS, sp) ? dropAt(pt, sp) : undefined;
-      if (at === undefined || at === p.a.desk) { p.state = 'home'; p.root.position.copy(p.home); p.root.rotation.y = p.homeYaw; }
-      else setEdit(p.a.id, { at });
+      const at = e.type === 'pointerup' && ray.ray.intersectPlane(FLOOR, pt) && ray.ray.intersectPlane(SEATS, sp) ? dropAt(pt, sp, p.a) : undefined;
+      const a = p.a, back = () => { p.state = 'home'; p.root.position.copy(p.home); p.root.rotation.y = p.homeYaw; };
+      if (!at) back();
+      else if (at.desk !== undefined && at.desk === a.desk) { if (a.where) setEdit(a.id, { where: null }); else back(); } // own chair: back to work
+      else if (at.desk !== undefined) { const o = agents.find(b => b !== a && b.desk === at.desk); setEdit(a.id, { at: at.desk, where: null }, o ? [[o.id, { at: a.desk }]] : []); } // someone else's chair: swap desks
+      else if (at.spot) setEdit(a.id, { where: at.spot });
+      else setEdit(a.id, { where: at.floor });
     } else if (down && !down.moved && e.type === 'pointerup') {
       aim(e); const hit = ray.intersectObjects(pickables, false).find(h => h.object.visible);
       if (hit) showInfo(hit.object.userData.pick);
@@ -768,6 +798,7 @@
   requestAnimationFrame(frame);
   // For automated checks: where someone is on screen, in page pixels.
   window.__office = { screenOf(id) { const p = people.find(q => q.a.id === id); if (!p) return null; const v = p.root.position.clone().setY(1.2).project(camera), r = cv.getBoundingClientRect(); return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; },
-    seats() { return agents.map(a => ({ id: a.id, desk: a.desk, free: a.free })); }, deskScreen(i, h = .7) { const v = seatPos(i).setY(h).project(camera), r = cv.getBoundingClientRect(); return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; } };
+    seats() { return agents.map(a => ({ id: a.id, desk: a.desk, where: a.where || null })); }, desks() { return Object.keys(deskObjs).map(Number).sort(); }, dropTest(x, y, id) { aim({ clientX: x, clientY: y }); const pt = new THREE.Vector3(), sp = new THREE.Vector3(); ray.ray.intersectPlane(FLOOR, pt); ray.ray.intersectPlane(SEATS, sp); return dropAt(pt, sp, agents.find(a => a.id === id)); }, pickAt(x, y) { aim({ clientX: x, clientY: y }); const h = ray.intersectObjects(pickables, false).find(h => h.object.visible); return h ? h.object.userData.pick : null; },
+    spotScreen(k) { const v = SPOTS[k], q = new THREE.Vector3(v.x, .7, v.z).project(camera), r = cv.getBoundingClientRect(); return { x: r.left + (q.x + 1) / 2 * r.width, y: r.top + (1 - q.y) / 2 * r.height }; }, deskScreen(i, h = .7) { const v = seatPos(i).setY(h).project(camera), r = cv.getBoundingClientRect(); return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; } };
 })();
 </script>

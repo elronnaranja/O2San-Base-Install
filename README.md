@@ -23,9 +23,9 @@ Double-click `office/index.html`. It opens in your browser: one room, the Brain 
 
 **Spawn a new agent:** press **+ Spawn agent**. A see-through new hire appears at a random free desk with a random name and look (press 🎲 for another). Type its one job, press **Copy**, and paste the command into Claude Code. The Chief writes its brief and brain room and gives it that desk. Reload the page to see it.
 
-**Make it yours:** click anyone and press the pencil to customize them (hair, headgear, glasses, facial hair, accessory, complexion, colors), or drag them to any desk or spot. Changes show at once and stay in that browser; the page gives you a `/office …` command to paste into Claude Code so they're saved in the office for good.
+**Make it yours:** click anyone and press the pencil to customize them (hair, headgear, glasses, facial hair, accessory, complexion, colors), or drag them to the couch, the pantry, someone else's chair (they swap desks), back to their own chair, or any spot on the floor. Their desk stays theirs while they're away. Changes show at once and stay in that browser; the page gives you a `/office …` command to paste into Claude Code so they're saved in the office for good.
 
-The room has 8 free desks. Full? Say "upgrade the office". The room is yours to redesign: more desks, a second room, your colors.
+It starts with one table, the Chief's. Every new agent brings its own, up to 9. Full? Say "upgrade the office". The room is yours to redesign: more desks, a second room, your colors.
 
 ## Grow it
 - **`/teach <what to change>`**: corrected the Chief? Save it so it sticks. For an agent: `/teach writer: shorter intros`.
