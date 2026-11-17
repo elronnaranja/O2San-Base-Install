@@ -500,7 +500,7 @@
   // Places you can drop someone besides a desk: the couch (sit) and the pantry (stand with a drink).
   const SPOTS = {
     'couch-1': { x: -7.75, z: 4.7, yaw: Math.PI / 2, pose: 'lounge' }, 'couch-2': { x: -7.75, z: 5.7, yaw: Math.PI / 2, pose: 'lounge' }, 'couch-3': { x: -7.75, z: 6.7, yaw: Math.PI / 2, pose: 'lounge' },
-    'pantry-1': { x: 7.35, z: -7.3, yaw: Math.PI / 2, pose: 'sip' }, 'pantry-2': { x: 7.35, z: -6.0, yaw: Math.PI / 2, pose: 'sip' }, 'cooler': { x: 7.35, z: -4.2, yaw: Math.PI / 2, pose: 'sip' }
+    'pantry-1': { x: 7.35, z: -7.3, yaw: Math.PI / 2, pose: 'sip', hx: 8.45 }, 'pantry-2': { x: 7.35, z: -6.0, yaw: Math.PI / 2, pose: 'sip', hx: 8.45 }, 'cooler': { x: 7.35, z: -4.2, yaw: Math.PI / 2, pose: 'sip', hx: 8.2 }
   };
   const STAND = [[-1.2, 7.8], [1.2, 7.8], [3.8, 3.6], [-3.8, 3.6], [3.8, -3.4], [-3.8, -3.4], [7.6, 1.8], [-3.2, 8]];
   const people = [];
@@ -721,6 +721,29 @@
   const seatPos = i => { const [x, z, yaw] = DESKS[i]; return new THREE.Vector3(0, 0, 1).applyAxisAngle(Y, yaw).add(new THREE.Vector3(x, 0, z)); };
   const dropRing = new THREE.Mesh(new THREE.RingGeometry(.9, 1.1, 40), new THREE.MeshBasicMaterial({ color: 0xffd34d, transparent: true, opacity: .9, side: THREE.DoubleSide }));
   dropRing.rotation.x = -Math.PI / 2; dropRing.visible = false; scene.add(dropRing);
+  // While dragging: the chair, couch seat, pantry or water cooler under the pointer glows, with a label saying what happens.
+  const hiBox = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0xffd34d, transparent: true, opacity: .2, depthWrite: false }));
+  hiBox.add(new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 1, 1)), new THREE.LineBasicMaterial({ color: 0xffd34d, depthTest: false, transparent: true })));
+  hiBox.visible = false; hiBox.renderOrder = 5; scene.add(hiBox);
+  const hiLabels = {}; let hiLabel = null, hiText = '';
+  function highlight(at, who) {
+    let c = null, size = null, text = '';
+    if (at && at.desk !== undefined) { const sp = seatPos(at.desk), o = agents.find(b => b.desk === at.desk); c = [sp.x, .75, sp.z]; size = [1.05, 1.5, 1.05]; text = o === who ? 'Back to work' : o ? o.name + "'s chair · swap" : 'Free chair'; }
+    else if (at && at.spot) {
+      const v = SPOTS[at.spot];
+      if (at.spot.startsWith('couch')) { c = [v.x - .15, .65, v.z]; size = [1.4, 1.2, 1]; text = 'Couch'; }
+      else if (at.spot === 'cooler') { c = [8.2, 1.05, v.z]; size = [.95, 2.15, .95]; text = 'Water cooler'; }
+      else { c = [8.45, 1.1, v.z]; size = [1.2, 2.1, 1.3]; text = 'Pantry'; }
+    }
+    hiBox.visible = !!c; if (c) { hiBox.position.set(c[0], c[1], c[2]); hiBox.scale.set(size[0], size[1], size[2]); }
+    if (text !== hiText && hiLabel) hiLabel.visible = false;
+    hiText = text;
+    if (text) {
+      hiLabel = hiLabels[text] || (hiLabels[text] = (() => { const sp = label(text, '#1a1008', 40, 'rgba(255,211,77,0.96)'); sp.renderOrder = 12; scene.add(sp); sprites.push([sp, 13]); return sp; })());
+      hiLabel.position.set(c[0], c[1] + size[1] / 2 + 2.3, c[2]); hiLabel.visible = true;
+    }
+    dropRing.material.color.set(text ? 0xffd34d : 0x7ef0ff);
+  }
   function aim(e) { const r = cv.getBoundingClientRect(); ptr.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1); ray.setFromCamera(ptr, camera); }
   // Where a drop lands: an agent's chair, a couch seat, a pantry spot, else a spot on the floor (kept off the Brain and the walls).
   // seatPt: where the pointer meets seat height (what you aim at when you point at a chair); pt: where it meets the floor.
@@ -728,7 +751,7 @@
     const near = (x, z) => Math.min(Math.hypot(x - seatPt.x, z - seatPt.z), Math.hypot(x - pt.x, z - pt.z) + .3);
     let best = null, bd = 1.9;
     agents.forEach(a => { if (a.desk == null) return; const sp = seatPos(a.desk), d = near(sp.x, sp.z); if (d < bd) { bd = d; best = { desk: a.desk, x: sp.x, z: sp.z }; } });
-    Object.entries(SPOTS).forEach(([k, v]) => { const d = near(v.x, v.z) + .15; if (d < Math.min(bd, 1.3) && !agents.some(a => a !== who && a.where === k)) { bd = d; best = { spot: k, x: v.x, z: v.z }; } });
+    Object.entries(SPOTS).forEach(([k, v]) => { const d = Math.min(near(v.x, v.z), v.hx ? near(v.hx, v.z) : 9) + .15; if (d < Math.min(bd, 1.3) && !agents.some(a => a !== who && a.where === k)) { bd = d; best = { spot: k, x: v.x, z: v.z }; } });
     if (best) return best;
     let x = Math.max(-S + 1.2, Math.min(S - 1.2, pt.x)), z = Math.max(-S + 1.2, Math.min(S - 1.2, pt.z));
     const rr = Math.hypot(x, z); if (rr < 3.2) { const k = 3.2 / (rr || 1); x = rr ? x * k : 3.2; z *= k; }
@@ -753,7 +776,7 @@
       if (!down.moved) return;
       aim(e); const pt = new THREE.Vector3(), sp = new THREE.Vector3(); if (!ray.ray.intersectPlane(FLOOR, pt) || !ray.ray.intersectPlane(SEATS, sp)) return;
       p.root.position.set(sp.x, .45, sp.z); p.root.rotation.y = azimuth;
-      const at = dropAt(pt, sp, p.a); dropRing.visible = true; dropRing.position.set(at.x, .09, at.z);
+      const at = dropAt(pt, sp, p.a); dropRing.visible = true; dropRing.position.set(at.x, .09, at.z); highlight(at, p.a);
       return;
     }
     if (Math.abs(dx) > 4) { down.moved = true; cv.classList.add('drag'); }
@@ -761,7 +784,7 @@
   });
   const up = e => {
     touches.delete(e.pointerId); cv.classList.remove('drag'); if (touches.size < 2) pinch = null;
-    dropRing.visible = false;
+    dropRing.visible = false; highlight(null);
     if (down && down.person && down.moved) {
       const p = down.person, pt = new THREE.Vector3(), sp = new THREE.Vector3(); aim(e);
       const at = e.type === 'pointerup' && ray.ray.intersectPlane(FLOOR, pt) && ray.ray.intersectPlane(SEATS, sp) ? dropAt(pt, sp, p.a) : undefined;
@@ -789,8 +812,9 @@
       orbiters.forEach((o, i) => { const a = clock * (.8 + i * .3) + i * 2.1; o.position.set(Math.cos(a) * 2.2, 2.8 + Math.sin(a * 1.3) * .5, Math.sin(a) * 2.2); }); }
     people.forEach(p => step(p, dt)); if (ghost) { step(ghost, dt); ghost.ring.material.opacity = .45 + Math.sin(clock * 4) * .35; }
     for (let i = pulses.length - 1; i >= 0; i--) { const q = pulses[i], k = (clock - q.t0) / 1.4; if (k >= 1) { scene.remove(q.r); pulses.splice(i, 1); continue; } q.r.scale.setScalar(1 + k * 3); q.r.material.opacity = .9 * (1 - k); }
-    [...people, ...(ghost ? [ghost] : [])].forEach(p => p.tag.position.set(p.root.position.x, p.root.position.y + (p.desk && p.state === 'home' ? 2.75 : 3.15), p.root.position.z));
+    [...people, ...(ghost ? [ghost] : [])].forEach(p => { p.tag.visible = p.state !== 'drag'; p.tag.position.set(p.root.position.x, p.root.position.y + (p.homePose === 'sit' && p.state === 'home' ? 2.75 : 3.15), p.root.position.z); });
     sprites.forEach(([s, px]) => fit(s, px));
+    if (hiBox.visible) hiBox.material.opacity = .3 + Math.sin(clock * 7) * .1;
     updateWalls();
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
@@ -798,7 +822,7 @@
   requestAnimationFrame(frame);
   // For automated checks: where someone is on screen, in page pixels.
   window.__office = { screenOf(id) { const p = people.find(q => q.a.id === id); if (!p) return null; const v = p.root.position.clone().setY(1.2).project(camera), r = cv.getBoundingClientRect(); return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; },
-    seats() { return agents.map(a => ({ id: a.id, desk: a.desk, where: a.where || null })); }, desks() { return Object.keys(deskObjs).map(Number).sort(); }, dropTest(x, y, id) { aim({ clientX: x, clientY: y }); const pt = new THREE.Vector3(), sp = new THREE.Vector3(); ray.ray.intersectPlane(FLOOR, pt); ray.ray.intersectPlane(SEATS, sp); return dropAt(pt, sp, agents.find(a => a.id === id)); }, pickAt(x, y) { aim({ clientX: x, clientY: y }); const h = ray.intersectObjects(pickables, false).find(h => h.object.visible); return h ? h.object.userData.pick : null; },
+    seats() { return agents.map(a => ({ id: a.id, desk: a.desk, where: a.where || null })); }, desks() { return Object.keys(deskObjs).map(Number).sort(); }, dropTest(x, y, id) { aim({ clientX: x, clientY: y }); const pt = new THREE.Vector3(), sp = new THREE.Vector3(); ray.ray.intersectPlane(FLOOR, pt); ray.ray.intersectPlane(SEATS, sp); return dropAt(pt, sp, agents.find(a => a.id === id)); }, hover() { return { box: hiBox.visible, label: hiLabel && hiLabel.visible ? hiText : '' }; }, pickAt(x, y) { aim({ clientX: x, clientY: y }); const h = ray.intersectObjects(pickables, false).find(h => h.object.visible); return h ? h.object.userData.pick : null; },
     spotScreen(k) { const v = SPOTS[k], q = new THREE.Vector3(v.x, .7, v.z).project(camera), r = cv.getBoundingClientRect(); return { x: r.left + (q.x + 1) / 2 * r.width, y: r.top + (1 - q.y) / 2 * r.height }; }, deskScreen(i, h = .7) { const v = seatPos(i).setY(h).project(camera), r = cv.getBoundingClientRect(); return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; } };
 })();
 </script>
