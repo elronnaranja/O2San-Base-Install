@@ -9,7 +9,7 @@
   THE TEAM LIST is the <script id="team"> block below. /setup and /new-agent edit it; you can too.
   Each agent: { "id": file name in .claude/agents/, "name": shown on the tag, "title": its one job, "seed": any whole number }
   The seed (the "look" number in a Spawn command) picks the agent's look and desk at random, the same way every time. A new seed = a new look.
-  Optional per agent: "look" (style, head, hair, skin, shirt, pants, cap) and "at" (a desk number 0-8, or [x, z] to stand there).
+  Optional per agent: "look" (style, head, glasses, facial, accessory, hair, skin, shirt, pants, shoes, cap) and "at" (a desk number 0-8, or [x, z] to stand there).
   You set those on the page (click someone → Customize look, or drag them), then save with the /office command it gives you.
   The room has 8 free desks. Room full? Ask your Chief to "upgrade the office" (a bigger room, a second room, new furniture).
 -->
@@ -54,11 +54,31 @@
   .hint code { font-family: ui-monospace, Menlo, Consolas, monospace; color: var(--text); }
   .help { position: fixed; left: 16px; bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); color: var(--muted); font-size: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; }
   .card { max-height: calc(100vh - 120px); overflow: auto; }
-  .opts { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 2px; }
-  .opt { padding: 4px 9px; font-size: 13px; border-radius: 8px; }
-  .opt[aria-pressed="true"] { border-color: var(--cyan); background: #1d2a33; }
-  .sw { width: 24px; height: 24px; padding: 0; border-radius: 50%; border: 2px solid rgba(255,255,255,.22); }
-  .sw[aria-pressed="true"] { border-color: #fff; box-shadow: 0 0 0 2px var(--cyan); }
+  .card-head { display: flex; gap: 14px; align-items: center; padding-right: 76px; margin-bottom: 4px; }
+  .card-head h2 { margin: 0; }
+  .card-head .sub { margin: 4px 0 0; }
+  .portrait { width: 72px; height: 86px; flex: none; border-radius: 14px; background: #221f2e; display: grid; place-items: center; overflow: hidden; }
+  .portrait svg { width: 100%; height: 100%; }
+  .portrait .glyph { font-size: 40px; color: var(--cyan); }
+  .look-btn { right: 52px !important; width: 34px; height: 30px; padding: 0 !important; display: grid; place-items: center; }
+  .look-btn[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
+  .look-panel { border: 1px solid var(--line); border-radius: 10px; padding: 10px; margin: 10px 0 4px; display: flex; flex-direction: column; gap: 8px; background: #17151f; }
+  .look-title { margin: 0; font-size: 15px; }
+  .look-label { margin: 4px 0 -2px; font-size: 10px; letter-spacing: .1em; font-weight: 700; color: var(--muted); }
+  .look-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); gap: 6px; }
+  .look-tile { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 2px 3px; border: 2px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--muted); font-size: 10px; }
+  .look-tile svg { width: 44px; height: 47px; }
+  .look-tile[aria-pressed="true"] { border-color: var(--accent); color: var(--text); }
+  .look-skins { display: flex; gap: 6px; flex-wrap: wrap; }
+  .look-skins button { width: 28px; height: 28px; padding: 0; border-radius: 50%; border: 2px solid var(--line); }
+  .look-skins button[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+  .look-colors { display: flex; gap: 6px; }
+  .look-color { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; color: var(--muted); margin: 0; }
+  .look-color input { width: 100%; max-width: 40px; aspect-ratio: 1; height: auto; padding: 0; border: 2px solid var(--line); border-radius: 6px; background: none; cursor: pointer; }
+  .look-color input::-webkit-color-swatch-wrapper { padding: 0; } .look-color input::-webkit-color-swatch { border: 0; border-radius: 3px; } .look-color input::-moz-color-swatch { border: 0; border-radius: 3px; }
+  .look-acts { display: flex; gap: 6px; }
+  .look-acts .main { background: var(--accent); border-color: var(--accent); color: #1a1008; font-weight: 700; }
+  .look-note { margin: 0; font-size: 12px; color: var(--muted); }
   .btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
   .pending { left: 16px; right: auto; top: calc(env(safe-area-inset-top, 0px) + 92px); bottom: auto; }
   .pending b { display: block; margin-bottom: 4px; }
@@ -91,11 +111,10 @@
 
 <div class="card" id="infoCard" hidden>
   <button class="x" id="infoClose" type="button" aria-label="Close">✕</button>
-  <h2 id="infoName"></h2>
-  <p class="sub" id="infoTitle"></p>
+  <button class="x look-btn" id="lookBtn" type="button" aria-label="Customize character" title="Customize character" aria-expanded="false"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button>
+  <div class="card-head"><div class="portrait" id="infoPortrait"></div><div><h2 id="infoName"></h2><p class="sub" id="infoTitle"></p></div></div>
+  <div class="look-panel" id="lookEd" hidden></div>
   <p class="hint" id="infoBody"></p>
-  <div class="btns" id="infoBtns"><button id="lookBtn" type="button">🎨 Customize look</button></div>
-  <div id="lookEd" hidden></div>
 </div>
 
 <div class="card pending" id="pending" hidden>
@@ -148,9 +167,10 @@
   const CAPS = ['#2fbf71', '#5865f2', '#2d2a40', '#e2546a', '#f2c14e', '#efe9dc'];
   function lookFor(a) {
     const r = rng(a.seed);
-    const L = { skin: pick(r, SKIN), hair: pick(r, HAIR), shirt: pick(r, SHIRT), pants: pick(r, PANTS), style: pick(r, STYLE), head: pick(r, HEAD), cap: pick(r, CAPS) };
+    const L = { skin: pick(r, SKIN), hair: pick(r, HAIR), shirt: pick(r, SHIRT), pants: pick(r, PANTS), style: pick(r, STYLE), head: pick(r, HEAD), cap: pick(r, CAPS), glasses: 'none', facial: 'none', accessory: 'none', shoes: '#14121c' };
     if (a.chief) Object.assign(L, { shirt: '#ff8a2a', head: 'headset', style: 'short' });
     Object.entries(a.look || {}).forEach(([k, v]) => { if (k in L && typeof v === 'string') L[k] = v; });
+    if (L.head === 'glasses') { L.head = 'none'; L.glasses = 'glasses'; } // older looks kept glasses with the hats
     return L;
   }
 
@@ -429,7 +449,7 @@
     const mat = c => ghost ? new THREE.MeshLambertMaterial({ color: c, transparent: true, opacity: .5 }) : lam(new THREE.Color(c).getHex());
     const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
     const legL = new THREE.Group(), legR = new THREE.Group(); legL.position.set(-.17, .75, 0); legR.position.set(.17, .75, 0);
-    [legL, legR].forEach(l => { box(.26, .75, .3, mat(L.pants), 0, -.375, 0, l); box(.28, .12, .38, mat('#14121c'), 0, -.72, .04, l); body.add(l); });
+    [legL, legR].forEach(l => { box(.26, .75, .3, mat(L.pants), 0, -.375, 0, l); box(.28, .12, .38, mat(L.shoes), 0, -.72, .04, l); body.add(l); });
     box(.72, .78, .42, mat(L.shirt), 0, 1.15, 0, body);
     const armL = new THREE.Group(), armR = new THREE.Group(); armL.position.set(-.46, 1.48, 0); armR.position.set(.46, 1.48, 0);
     [armL, armR].forEach(r => { box(.2, .68, .24, mat(L.shirt), 0, -.3, 0, r); box(.2, .14, .22, mat(L.skin), 0, -.7, 0, r); body.add(r); });
@@ -441,7 +461,14 @@
     if (L.style === 'ponytail') box(.2, .5, .2, mat(L.hair), 0, -.05, -.38, head);
     if (L.style === 'bun') box(.28, .26, .28, mat(L.hair), 0, .46, -.15, head);
     if (L.style === 'curly') for (let i = 0; i < 4; i++) box(.2, .18, .3, mat(L.hair), -.24 + i * .16, .35 + (i % 2) * .06, .1, head);
-    if (L.head === 'glasses') box(.5, .06, .03, mat('#0e0c14'), 0, .06, .29, head, false);
+    if (L.glasses === 'glasses') box(.5, .06, .03, mat('#0e0c14'), 0, .06, .29, head, false);
+    if (L.glasses === 'shades') { box(.2, .11, .03, mat('#0e0c14'), -.13, .05, .29, head, false); box(.2, .11, .03, mat('#0e0c14'), .13, .05, .29, head, false); box(.1, .03, .03, mat('#0e0c14'), 0, .08, .29, head, false); }
+    if (L.facial === 'stubble') box(.44, .12, .02, mat(L.hair), 0, -.18, .276, head, false);
+    if (L.facial === 'mustache') box(.22, .05, .03, mat(L.hair), 0, -.08, .285, head, false);
+    if (L.facial === 'beard') { box(.56, .2, .08, mat(L.hair), 0, -.2, .25, head); box(.08, .3, .4, mat(L.hair), -.28, -.1, .06, head); box(.08, .3, .4, mat(L.hair), .28, -.1, .06, head); }
+    if (L.accessory === 'earring') { box(.05, .07, .05, mat('#f2c14e'), -.31, -.08, 0, head, false); box(.05, .07, .05, mat('#f2c14e'), .31, -.08, 0, head, false); }
+    if (L.accessory === 'watch') box(.23, .08, .26, mat('#22262e'), 0, -.56, 0, armL, false);
+    if (L.accessory === 'lanyard') { box(.04, .42, .02, mat('#2f6fd6'), -.1, 1.33, .215, body, false); box(.04, .42, .02, mat('#2f6fd6'), .1, 1.33, .215, body, false); box(.16, .2, .02, mat('#f4f1e8'), 0, 1.05, .225, body, false); }
     if (L.head === 'cap') { box(.64, .18, .6, mat(L.cap), 0, .36, 0, head); box(.5, .05, .3, mat(L.cap), 0, .28, .4, head); }
     if (L.head === 'beanie') { box(.64, .26, .6, mat(L.cap), 0, .36, 0, head); box(.66, .08, .62, mat('#efe9dc'), 0, .22, 0, head); }
     if (L.head === 'headset') { box(.7, .06, .1, mat('#14121c'), 0, .42, 0, head); box(.08, .2, .2, mat('#14121c'), -.33, .05, 0, head); box(.08, .2, .2, mat('#14121c'), .33, .05, 0, head); }
@@ -457,19 +484,23 @@
     else if (pose === 'touch') { p.body.position.y = 0; p.legL.rotation.x = p.legR.rotation.x = 0; p.armL.rotation.x = 0; p.armR.rotation.x = -1.6; }
     else { p.body.position.y = 0; p.legL.rotation.x = p.legR.rotation.x = 0; p.armL.rotation.x = p.armR.rotation.x = 0; }
   }
+  // All desks stand in the room from the start, empty or not; people sit at them.
+  const deskObjs = DESKS.map((_, i) => desk(i, false));
+  function paintDesks() { deskObjs.forEach((d, i) => d.screen.material.color.set(agents.some(a => a.desk === i) ? 0x7ef0ff : 0x2a2639)); }
   const STAND = [[-1.2, 7.8], [1.2, 7.8], [3.8, 3.6], [-3.8, 3.6], [3.8, -3.4], [-3.8, -3.4], [7.6, 1.8], [-3.2, 8]];
   const people = [];
   let clock = 0;
   function place(a, ghost) {
     const L = lookFor(a);
     const p = person(a, L, ghost);
-    if (a.desk != null) { p.desk = desk(a.desk, ghost); p.home = p.desk.seat.clone(); p.homeYaw = p.desk.yaw; }
+    if (a.desk != null) { p.desk = deskObjs[a.desk]; p.home = p.desk.seat.clone(); p.homeYaw = p.desk.yaw; }
     else { const [x, z] = a.free || STAND[(a.spot || 0) % STAND.length]; p.home = new THREE.Vector3(x, 0, z); p.homeYaw = Math.atan2(-x, -z); }
     p.root.position.copy(p.home); p.root.rotation.y = p.homeYaw;
     p.state = 'home'; p.next = 6 + rng(Number(a.seed) + 11)() * 20;
     return p;
   }
   agents.forEach(a => people.push(place(a, false)));
+  paintDesks();
 
   // Now and then someone gets up, walks to the Brain to save their work, and goes back.
   function step(p, dt) {
@@ -510,7 +541,7 @@
   let ghost = null, draft = null;
   function removeGhost() {
     if (!ghost) return;
-    scene.remove(ghost.root, ghost.tag, ghost.ring); if (ghost.desk) scene.remove(ghost.desk.g);
+    scene.remove(ghost.root, ghost.tag, ghost.ring);
     const i = sprites.findIndex(s => s[0] === ghost.tag); if (i >= 0) sprites.splice(i, 1);
     for (let j = pickables.length - 1; j >= 0; j--) if (pickables[j].userData.pick === draft.id && !agents.some(a => a.id === draft.id)) pickables.splice(j, 1);
     ghost = null;
@@ -551,9 +582,9 @@
   const info = $('infoCard');
   $('infoClose').onclick = () => { info.hidden = true; };
   function showInfo(id) {
-    $('lookEd').hidden = true; infoFor = null;
+    $('lookEd').hidden = true; $('lookBtn').setAttribute('aria-expanded', 'false'); infoFor = null;
     if (id === 'brain') {
-      $('infoBtns').hidden = true;
+      $('lookBtn').hidden = true; showPortrait(null);
       $('infoName').textContent = 'The Brain';
       $('infoTitle').textContent = 'The brain/ folder: the office\'s shared memory';
       $('infoBody').innerHTML = 'Every agent reads it before working and writes back after. Numbered rooms: <code>00-Core</code> (you and the memory rules), <code>03-AI-Office</code> (rules and decisions), <code>08-Inbox</code>, <code>10-Office</code> (board, approvals, state pages, each agent\'s room) and more. Open the <code>brain</code> folder as a vault in Obsidian to read it.';
@@ -561,7 +592,7 @@
       const a = agents.find(x => x.id === id) || (draft && draft.id === id ? draft : null); if (!a) return;
       $('infoName').textContent = a.name;
       $('infoTitle').textContent = a.title || '';
-      $('infoBtns').hidden = a === draft; infoFor = a === draft ? null : a;
+      $('lookBtn').hidden = a === draft; infoFor = a === draft ? null : a; showPortrait(lookFor(a), a.name);
       $('infoBody').innerHTML = a === draft ? 'Not hired yet. Copy the command in the New agent card.' :
         `Brief: <code>.claude/agents/${a.id}.md</code><br>State: <code>brain/10-Office/state/agent-${a.id}.md</code>` + (a.desk == null ? '<br>No free desk. Ask your Chief to upgrade the office.' : '') +
         `<br><br>Talk to it in a fresh session: “You are ${a.name}: follow .claude/agents/${a.id}.md.”`;
@@ -569,35 +600,67 @@
     info.hidden = false;
   }
   let infoFor = null;
-  const OPTIONS = [
-    ['Hair style', 'style', ['short', 'bob', 'long', 'ponytail', 'bun', 'curly']],
-    ['On the head', 'head', ['none', 'glasses', 'cap', 'beanie', 'headset']],
-    ['Hair', 'hair', HAIR], ['Skin', 'skin', SKIN], ['Shirt', 'shirt', [...new Set([...SHIRT, '#ff8a2a', '#efe9dc', '#14121c'])]],
-    ['Pants', 'pants', PANTS], ['Hat color', 'cap', CAPS]
-  ];
+  // Look editor, the same as HQ's: a pencil beside the close box opens it; each tile is this character wearing that option;
+  // changes preview on the portrait; SAVE puts them on the 3D character (in this browser, until /office saves them).
+  const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  function avatarSVG(L, name) {
+    const hair = esc(L.hair), skin = esc(L.skin), shirt = esc(L.shirt), cap = esc(L.cap), hs = L.style, acc = L.head;
+    const extra = hs === 'long' ? `<rect x="18" y="27" width="8" height="36" fill="${hair}"/><rect x="54" y="27" width="8" height="36" fill="${hair}"/>`
+      : hs === 'bob' ? `<rect x="18" y="27" width="8" height="20" fill="${hair}"/><rect x="54" y="27" width="8" height="20" fill="${hair}"/>`
+      : hs === 'ponytail' ? `<rect x="58" y="22" width="9" height="8" fill="${hair}"/><rect x="62" y="28" width="7" height="22" rx="3" fill="${hair}"/>`
+      : hs === 'bun' ? `<rect x="31" y="3" width="18" height="13" rx="5" fill="${hair}"/>`
+      : hs === 'curly' ? `<rect x="16" y="11" width="12" height="11" rx="5" fill="${hair}"/><rect x="28" y="7" width="12" height="11" rx="5" fill="${hair}"/><rect x="40" y="7" width="12" height="11" rx="5" fill="${hair}"/><rect x="52" y="11" width="12" height="11" rx="5" fill="${hair}"/>` : '';
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 96" role="img" aria-label="${esc(name || 'Agent')}"><rect x="15" y="55" width="50" height="37" rx="3" fill="${shirt}"/><rect x="22" y="16" width="36" height="41" rx="3" fill="${skin}"/><path d="M20 33V14H60V33H53V25H27V33Z" fill="${hair}"/>${extra}<rect x="29" y="35" width="5" height="5" fill="#202a32"/><rect x="46" y="35" width="5" height="5" fill="#202a32"/><rect x="35" y="47" width="10" height="2" fill="#885a45"/>`
+      + (L.facial === 'stubble' ? `<rect x="24" y="41" width="32" height="14" rx="3" fill="${hair}" opacity=".35"/>` : '')
+      + (L.facial === 'beard' ? `<path d="M22 38H28V44H52V38H58V50Q58 57 51 57H29Q22 57 22 50Z" fill="${hair}"/>` : '')
+      + (L.facial === 'mustache' ? `<rect x="33" y="43" width="14" height="3" rx="1" fill="${hair}"/>` : '')
+      + (L.glasses === 'glasses' ? '<path d="M25 32H37V42H25ZM43 32H55V42H43ZM37 36H43" fill="none" stroke="#25333e" stroke-width="2"/>' : '')
+      + (L.glasses === 'shades' ? '<path d="M24 32H38V41H24ZM42 32H56V41H42Z" fill="#14121c"/><path d="M38 35H42" stroke="#14121c" stroke-width="2"/>' : '')
+      + (L.accessory === 'earring' ? '<rect x="19" y="42" width="3" height="4" fill="#f2c14e"/><rect x="58" y="42" width="3" height="4" fill="#f2c14e"/>' : '')
+      + (L.accessory === 'lanyard' ? '<path d="M33 56L38 72M47 56L42 72" stroke="#2f6fd6" stroke-width="2"/><rect x="35" y="71" width="10" height="12" rx="1" fill="#f4f1e8"/>' : '')
+      + (L.accessory === 'watch' ? '<rect x="15" y="80" width="9" height="6" rx="1" fill="#22262e"/>' : '')
+      + (acc === 'headset' ? '<path d="M17 38V12H63V38" fill="none" stroke="#25333e" stroke-width="5"/>' : '')
+      + (acc === 'cap' ? `<rect x="19" y="8" width="42" height="12" rx="3" fill="${cap}"/><rect x="40" y="17" width="26" height="5" rx="2" fill="${cap}"/>` : '')
+      + (acc === 'beanie' ? `<rect x="19" y="5" width="42" height="17" rx="5" fill="${cap}"/><rect x="18" y="18" width="44" height="5" fill="#efe9dc"/>` : '')
+      + '</svg>';
+  }
+  const LOOK_ROWS = [['HAIR STYLE', 'style', ['short', 'bob', 'long', 'ponytail', 'bun', 'curly']], ['HEADGEAR', 'head', ['none', 'cap', 'beanie', 'headset']],
+    ['GLASSES', 'glasses', ['none', 'glasses', 'shades']], ['FACIAL HAIR', 'facial', ['none', 'stubble', 'mustache', 'beard']], ['ACCESSORY', 'accessory', ['none', 'watch', 'lanyard', 'earring']]];
+  let lookDraft = null, lookNote = '';
+  function showPortrait(L, name) { $('infoPortrait').innerHTML = L ? avatarSVG(L, name) : '<span class="glyph">◈</span>'; }
   function lookEditor() {
     const a = infoFor, ed = $('lookEd'); if (!a) return;
-    const L = lookFor(a); ed.innerHTML = '';
-    OPTIONS.forEach(([label, key, list]) => {
-      const l = document.createElement('label'); l.textContent = label; ed.append(l);
-      const row = document.createElement('div'); row.className = 'opts';
-      list.forEach(v => {
-        const b = document.createElement('button'); b.type = 'button'; const color = v[0] === '#';
-        b.className = color ? 'sw' : 'opt'; if (color) { b.style.background = v; b.setAttribute('aria-label', label + ' ' + v); } else b.textContent = v;
-        b.setAttribute('aria-pressed', String(L[key] === v));
-        b.onclick = () => { setEdit(a.id, { look: { [key]: v } }); lookEditor(); };
-        row.append(b);
-      });
-      ed.append(row);
-    });
-    const btns = document.createElement('div'); btns.className = 'btns';
-    const rnd = document.createElement('button'); rnd.type = 'button'; rnd.textContent = '🎲 Random look';
-    rnd.onclick = () => { const r = Math.random; setEdit(a.id, { look: { style: pick(r, OPTIONS[0][2]), head: pick(r, OPTIONS[1][2]), hair: pick(r, HAIR), skin: pick(r, SKIN), shirt: pick(r, OPTIONS[4][2]), pants: pick(r, PANTS), cap: pick(r, CAPS) } }); lookEditor(); };
-    const rst = document.createElement('button'); rst.type = 'button'; rst.textContent = 'Reset look';
-    rst.onclick = () => { if (edits[a.id]) { delete edits[a.id].look; if (!Object.keys(edits[a.id]).length) delete edits[a.id]; } saveEdits(); applyEdits(); rebuild(); lookEditor(); };
-    btns.append(rnd, rst); ed.append(btns);
+    const D = lookDraft;
+    const tile = (key, v) => { const over = Object.assign({}, D, { [key]: v }); if (key === 'style') over.head = 'none';
+      return `<button type="button" class="look-tile" data-k="${key}" data-v="${v}" aria-pressed="${D[key] === v}" title="${v}">${avatarSVG(over, v).replace('viewBox="0 0 80 96"', key === 'accessory' ? 'viewBox="8 8 64 84"' : 'viewBox="12 0 56 60"')}<span>${v}</span></button>`; };
+    const color = (k, l) => `<label class="look-color"><input type="color" data-c="${k}" value="${esc(D[k])}"><span>${l}</span></label>`;
+    ed.innerHTML = `<h3 class="look-title">Customize ${esc(a.name)}</h3>`
+      + LOOK_ROWS.map(([label, key, list]) => `<p class="look-label">${label}</p><div class="look-tiles" role="group" aria-label="${label}">${list.map(v => tile(key, v)).join('')}</div>`).join('')
+      + `<p class="look-label">COMPLEXION</p><div class="look-skins" role="group" aria-label="Complexion">${SKIN.map(c => `<button type="button" data-skin="${c}" style="background:${c}" aria-label="Skin tone ${c}" aria-pressed="${D.skin === c}"></button>`).join('')}</div>`
+      + `<p class="look-label">COLORS</p><div class="look-colors">${color('hair', 'Hair')}${color('shirt', 'Shirt')}${color('pants', 'Pants')}${color('shoes', 'Shoes')}${['cap', 'beanie'].includes(D.head) ? color('cap', 'Hat') : ''}</div>`
+      + `<div class="look-acts"><button type="button" class="main" data-act="save">SAVE</button><button type="button" data-act="reset">RESET</button></div>`
+      + `<p class="look-note" role="status">${esc(lookNote || 'Saves in this browser. The page then gives you a /office command to keep it for good.')}</p>`;
+    ed.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { D[b.dataset.k] = b.dataset.v; lookNote = ''; lookEditor(); showPortrait(D, a.name); ed.querySelector(`[data-k="${b.dataset.k}"][data-v="${b.dataset.v}"]`).focus(); });
+    ed.querySelectorAll('[data-skin]').forEach(b => b.onclick = () => { D.skin = b.dataset.skin; lookEditor(); showPortrait(D, a.name); });
+    ed.querySelectorAll('[data-c]').forEach(i => { i.oninput = () => { D[i.dataset.c] = i.value; showPortrait(D, a.name); }; i.onchange = () => { lookEditor(); showPortrait(D, a.name); }; });
+    ed.querySelector('[data-act="save"]').onclick = () => {
+      const base = lookFor(Object.assign({}, a, { look: a.baseLook })), diff = {};
+      Object.keys(D).forEach(k => { if (D[k] !== base[k]) diff[k] = D[k]; });
+      const e = edits[a.id] || (edits[a.id] = {}); if (Object.keys(diff).length) e.look = diff; else delete e.look;
+      if (!Object.keys(e).length) delete edits[a.id];
+      saveEdits(); applyEdits(); rebuild(); lookNote = 'Saved in this browser.'; lookEditor();
+    };
+    ed.querySelector('[data-act="reset"]').onclick = () => {
+      if (edits[a.id]) { delete edits[a.id].look; if (!Object.keys(edits[a.id]).length) delete edits[a.id]; }
+      saveEdits(); applyEdits(); rebuild(); lookDraft = lookFor(a); lookNote = 'Back to the starting look.'; lookEditor(); showPortrait(lookDraft, a.name);
+    };
   }
-  $('lookBtn').onclick = () => { const ed = $('lookEd'); ed.hidden = !ed.hidden; if (!ed.hidden) lookEditor(); };
+  $('lookBtn').onclick = () => {
+    const ed = $('lookEd'), open = ed.hidden; ed.hidden = !open; $('lookBtn').setAttribute('aria-expanded', String(open));
+    if (!infoFor) return;
+    lookDraft = lookFor(infoFor); lookNote = '';
+    if (open) lookEditor(); showPortrait(lookDraft, infoFor.name);
+  };
 
   /* ---- your changes: kept in this browser, saved for good with /office ---- */
   function setEdit(id, patch) {
@@ -607,13 +670,13 @@
     saveEdits(); applyEdits(); rebuild();
   }
   function unplace(p) {
-    scene.remove(p.root, p.tag); if (p.desk) scene.remove(p.desk.g);
+    scene.remove(p.root, p.tag);
     const i = sprites.findIndex(s => s[0] === p.tag); if (i >= 0) sprites.splice(i, 1);
     for (let j = pickables.length - 1; j >= 0; j--) if (pickables[j].userData.pick === p.a.id) pickables.splice(j, 1);
   }
   function rebuild() {
     people.splice(0).forEach(unplace); seatAll(agents); agents.forEach(a => people.push(place(a, false)));
-    renderCount(); renderPending(); if (ghost) newDraft(true);
+    paintDesks(); renderCount(); renderPending(); if (ghost) newDraft(true);
   }
   function renderPending() {
     const has = Object.keys(edits).length > 0;
@@ -630,14 +693,16 @@
   renderPending();
 
   const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
-  const FLOOR = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), Y = new THREE.Vector3(0, 1, 0);
+  const FLOOR = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), SEATS = new THREE.Plane(new THREE.Vector3(0, 1, 0), -.7), Y = new THREE.Vector3(0, 1, 0);
   const seatPos = i => { const [x, z, yaw] = DESKS[i]; return new THREE.Vector3(0, 0, 1).applyAxisAngle(Y, yaw).add(new THREE.Vector3(x, 0, z)); };
   const dropRing = new THREE.Mesh(new THREE.RingGeometry(.9, 1.1, 40), new THREE.MeshBasicMaterial({ color: 0xffd34d, transparent: true, opacity: .9, side: THREE.DoubleSide }));
   dropRing.rotation.x = -Math.PI / 2; dropRing.visible = false; scene.add(dropRing);
   function aim(e) { const r = cv.getBoundingClientRect(); ptr.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1); ray.setFromCamera(ptr, camera); }
   // Where a drop lands: a desk (number) when close to one, else a spot on the floor, kept off the Brain and the walls.
-  function dropAt(pt) {
-    let best = -1, bd = 1.6; DESKS.forEach((_, i) => { const d = seatPos(i).distanceTo(new THREE.Vector3(pt.x, 0, pt.z)); if (d < bd) { bd = d; best = i; } });
+  // seatPt: where the pointer meets seat height (what you aim at when you point at a chair); pt: where it meets the floor.
+  function dropAt(pt, seatPt) {
+    let best = -1, bd = 1.9;
+    DESKS.forEach((_, i) => { const sp = seatPos(i), d = Math.min(sp.distanceTo(new THREE.Vector3(seatPt.x, 0, seatPt.z)), sp.distanceTo(new THREE.Vector3(pt.x, 0, pt.z)) + .3); if (d < bd) { bd = d; best = i; } });
     if (best >= 0) return best;
     let x = Math.max(-S + 1.2, Math.min(S - 1.2, pt.x)), z = Math.max(-S + 1.2, Math.min(S - 1.2, pt.z));
     const rr = Math.hypot(x, z); if (rr < 3.2) { const k = 3.2 / (rr || 1); x = rr ? x * k : 3.2; z *= k; }
@@ -659,9 +724,9 @@
       const p = down.person;
       if (!down.moved && Math.hypot(dx, dy) > 5) { down.moved = true; p.state = 'drag'; cv.classList.add('drag'); }
       if (!down.moved) return;
-      aim(e); const pt = new THREE.Vector3(); if (!ray.ray.intersectPlane(FLOOR, pt)) return;
-      p.root.position.set(pt.x, .45, pt.z); p.root.rotation.y = azimuth;
-      const at = dropAt(pt); dropRing.visible = true;
+      aim(e); const pt = new THREE.Vector3(), sp = new THREE.Vector3(); if (!ray.ray.intersectPlane(FLOOR, pt) || !ray.ray.intersectPlane(SEATS, sp)) return;
+      p.root.position.set(sp.x, .45, sp.z); p.root.rotation.y = azimuth;
+      const at = dropAt(pt, sp); dropRing.visible = true;
       if (typeof at === 'number') { const sp = seatPos(at); dropRing.position.set(sp.x, .09, sp.z); } else dropRing.position.set(at[0], .09, at[1]);
       return;
     }
@@ -672,8 +737,8 @@
     touches.delete(e.pointerId); cv.classList.remove('drag'); if (touches.size < 2) pinch = null;
     dropRing.visible = false;
     if (down && down.person && down.moved) {
-      const p = down.person, pt = new THREE.Vector3(); aim(e);
-      const at = e.type === 'pointerup' && ray.ray.intersectPlane(FLOOR, pt) ? dropAt(pt) : undefined;
+      const p = down.person, pt = new THREE.Vector3(), sp = new THREE.Vector3(); aim(e);
+      const at = e.type === 'pointerup' && ray.ray.intersectPlane(FLOOR, pt) && ray.ray.intersectPlane(SEATS, sp) ? dropAt(pt, sp) : undefined;
       if (at === undefined || at === p.a.desk) { p.state = 'home'; p.root.position.copy(p.home); p.root.rotation.y = p.homeYaw; }
       else setEdit(p.a.id, { at });
     } else if (down && !down.moved && e.type === 'pointerup') {
@@ -703,6 +768,6 @@
   requestAnimationFrame(frame);
   // For automated checks: where someone is on screen, in page pixels.
   window.__office = { screenOf(id) { const p = people.find(q => q.a.id === id); if (!p) return null; const v = p.root.position.clone().setY(1.2).project(camera), r = cv.getBoundingClientRect(); return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; },
-    seats() { return agents.map(a => ({ id: a.id, desk: a.desk, free: a.free })); }, deskScreen(i) { const v = seatPos(i).setY(.5).project(camera), r = cv.getBoundingClientRect(); return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; } };
+    seats() { return agents.map(a => ({ id: a.id, desk: a.desk, free: a.free })); }, deskScreen(i, h = .7) { const v = seatPos(i).setY(h).project(camera), r = cv.getBoundingClientRect(); return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; } };
 })();
 </script>
