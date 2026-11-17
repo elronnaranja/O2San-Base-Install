@@ -1,0 +1,470 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My AI Office</title>
+<!--
+  Your AI office: one room, the Brain in the middle, one desk per agent.
+  Open this file in any browser (double-click it). Nothing here is sent anywhere.
+
+  THE TEAM LIST is the <script id="team"> block below. /setup and /new-agent edit it; you can too.
+  Each agent: { "id": file name in .claude/agents/, "name": shown on the tag, "title": its one job, "seed": any whole number }
+  The seed (the "look" number in a Spawn command) picks the agent's look and desk at random, the same way every time. A new seed = a new look.
+  The room has 8 free desks. Room full? Ask your Chief to "upgrade the office" (a bigger room, a second room, new furniture).
+-->
+<script id="team" type="application/json">
+{
+  "office": "My AI Office",
+  "agents": [
+    { "id": "chief-of-staff", "name": "Chief", "title": "Chief of Staff", "seed": 1, "chief": true }
+  ]
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: dark; --bg: #101c23; --panel: rgba(18,16,26,.92); --line: #2e2a3d; --text: #efe9dc; --muted: #a49cb8; --accent: #ff8a2a; --cyan: #7ef0ff; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', sans-serif; overflow: hidden; }
+  #office { position: fixed; inset: 0; }
+  #office canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+  #office canvas.drag { cursor: grabbing; }
+  .bar { position: fixed; left: 16px; right: 16px; top: calc(env(safe-area-inset-top, 0px) + 14px); display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; pointer-events: none; }
+  .bar > * { pointer-events: auto; }
+  .title { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; }
+  .title h1 { margin: 0; font-size: 18px; line-height: 1; letter-spacing: .02em; }
+  .title p { margin: 6px 0 0; color: var(--muted); font-size: 13px; line-height: 1.2; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  button { font: inherit; color: inherit; cursor: pointer; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); padding: 9px 14px; }
+  button:hover { border-color: #4a4460; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  .spawn { background: var(--accent); border-color: var(--accent); color: #1a1008; font-weight: 700; letter-spacing: .03em; }
+  .spawn:hover { background: #ff9d4a; border-color: #ff9d4a; }
+  .card { position: fixed; right: 16px; bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); width: min(380px, calc(100vw - 32px)); background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; box-sizing: border-box; }
+  .card h2 { margin: 0 0 2px; font-size: 20px; line-height: 1; }
+  .card .sub { color: var(--muted); margin: 6px 0 12px; font-size: 14px; line-height: 1.3; }
+  .card .x { position: absolute; top: 10px; right: 10px; padding: 4px 10px; }
+  .row { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
+  .row input { flex: 1; min-width: 0; font: inherit; color: var(--text); background: #0c0b12; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-top: 10px; }
+  .cmd { position: relative; margin-top: 12px; background: #0c0b12; border: 1px solid var(--line); border-radius: 8px; padding: 10px 76px 10px 12px; font: 13px/1.4 ui-monospace, Menlo, Consolas, monospace; word-break: break-word; user-select: all; }
+  .cmd button { position: absolute; top: 6px; right: 6px; padding: 4px 10px; font-size: 13px; }
+  .hint { color: var(--muted); font-size: 13px; margin: 10px 0 0; line-height: 1.4; }
+  .hint code { font-family: ui-monospace, Menlo, Consolas, monospace; color: var(--text); }
+  .help { position: fixed; left: 16px; bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); color: var(--muted); font-size: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; }
+  .msg { position: fixed; inset: 0; display: grid; place-items: center; color: var(--muted); letter-spacing: .1em; }
+  @media (max-width: 560px) { .help { display: none; } .card { bottom: 12px; } }
+</style>
+
+<div id="office"><div class="msg" id="loading">LOADING THE OFFICE…</div></div>
+
+<div class="bar">
+  <div class="title"><h1 id="officeName">My AI Office</h1><p id="headcount">1 agent</p></div>
+  <div class="actions">
+    <button id="resetView" type="button" title="Back to the start view">Reset view</button>
+    <button id="spawnBtn" class="spawn" type="button">+ SPAWN AGENT</button>
+  </div>
+</div>
+
+<div class="card" id="spawnCard" hidden>
+  <button class="x" id="spawnClose" type="button" aria-label="Close">✕</button>
+  <h2>New agent</h2>
+  <p class="sub">The see-through one is your new hire. Give it a name and one job, then paste the command into Claude Code.</p>
+  <label for="spawnName">Name</label>
+  <div class="row"><input id="spawnName" maxlength="24" autocomplete="off"><button id="reroll" type="button" title="Random name, look and desk">🎲 Random</button></div>
+  <label for="spawnJob">Its one job (optional, the Chief asks if empty)</label>
+  <div class="row"><input id="spawnJob" maxlength="80" placeholder="e.g. writes my weekly newsletter" autocomplete="off"></div>
+  <div class="cmd"><span id="spawnCmd"></span><button id="copyCmd" type="button">Copy</button></div>
+  <p class="hint" id="fullNote" hidden>The room is full, so this one will stand. Ask your Chief to “upgrade the office” for more desks.</p>
+  <p class="hint">Paste it in Claude Code, in this office's folder. The Chief writes the agent's brief and brain room, then adds it to this office. Reload this page to see it at its desk.</p>
+</div>
+
+<div class="card" id="infoCard" hidden>
+  <button class="x" id="infoClose" type="button" aria-label="Close">✕</button>
+  <h2 id="infoName"></h2>
+  <p class="sub" id="infoTitle"></p>
+  <p class="hint" id="infoBody"></p>
+</div>
+
+<div class="help">Drag to turn · scroll or pinch to zoom · click someone</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  'use strict';
+  /* ---------------- team ---------------- */
+  let TEAM;
+  try { TEAM = JSON.parse(document.getElementById('team').textContent); }
+  catch (e) { document.getElementById('loading').textContent = 'THE TEAM LIST HAS A TYPO. ASK YOUR CHIEF TO FIX office/index.html.'; return; }
+  const agents = (TEAM.agents || []).filter(a => a && a.name);
+  const officeName = TEAM.office || 'My AI Office';
+  document.title = officeName;
+  document.getElementById('officeName').textContent = officeName;
+
+  // Random, but the same every time for the same seed.
+  function rng(seed) { let a = (Number(seed) >>> 0) || 1; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  const pick = (r, list) => list[Math.floor(r() * list.length)];
+  const SKIN = ['#f3d2b3', '#e0b48f', '#c98c63', '#b97d55', '#8d5a3b', '#5e3a26'];
+  const HAIR = ['#151018', '#2a1a12', '#3a2416', '#6b3f1f', '#a8743f', '#d9c08a', '#8e8a94', '#b5483a'];
+  const SHIRT = ['#4fb3e8', '#3fa08f', '#5b6bd6', '#f2c14e', '#2fbf71', '#9be37a', '#7c86ff', '#e2546a', '#5fcf74', '#7fb0ff', '#ff5d8f', '#8e7cc3', '#d9d2c3', '#c59bff', '#2a2f45'];
+  const PANTS = ['#2d2a40', '#26313a', '#232338', '#2b3245', '#1b1a24', '#2b2a3a', '#23302a', '#3b3a4a'];
+  const STYLE = ['short', 'short', 'bob', 'long', 'ponytail', 'bun', 'curly'];
+  const HEAD = ['none', 'none', 'none', 'glasses', 'glasses', 'cap', 'beanie', 'headset'];
+  const CAPS = ['#2fbf71', '#5865f2', '#2d2a40', '#e2546a', '#f2c14e', '#efe9dc'];
+  function lookFor(a) {
+    const r = rng(a.seed);
+    const L = { skin: pick(r, SKIN), hair: pick(r, HAIR), shirt: pick(r, SHIRT), pants: pick(r, PANTS), style: pick(r, STYLE), head: pick(r, HEAD), cap: pick(r, CAPS) };
+    if (a.chief) Object.assign(L, { shirt: '#ff8a2a', head: 'headset', style: 'short' });
+    return L;
+  }
+
+  /* Desks: 0 is the Chief's; 1-8 are handed out at random (by seed) in the order agents were added. */
+  const DESKS = [
+    [0, -8, 0],
+    [-6, -8, 0], [6, -8, 0],
+    [-8.5, -2, Math.PI / 2], [-8.5, 4, Math.PI / 2],
+    [8.5, -2, -Math.PI / 2], [8.5, 4, -Math.PI / 2],
+    [-3.5, 8.5, Math.PI], [3.5, 8.5, Math.PI]
+  ];
+  function seatAll(list) {
+    const free = DESKS.map((_, i) => i).slice(1);
+    let standing = 0;
+    list.forEach(a => {
+      if (a.chief) { a.desk = 0; return; }
+      if (!free.length) { a.desk = null; a.spot = standing++; return; }
+      const i = Math.floor(rng(Number(a.seed) * 7 + 3)() * free.length);
+      a.desk = free.splice(i, 1)[0];
+    });
+  }
+  seatAll(agents);
+  const count = n => n + (n === 1 ? ' agent' : ' agents');
+  document.getElementById('headcount').textContent = count(agents.length) + ' · ' + Math.max(0, 8 - agents.filter(a => !a.chief).length) + ' free desks';
+
+  /* ---------------- 3D ---------------- */
+  if (!window.THREE) { document.getElementById('loading').textContent = 'THE 3D VIEW NEEDS THE INTERNET ONCE TO LOAD.'; return; }
+  const host = document.getElementById('office');
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ antialias: true }); }
+  catch (e) { document.getElementById('loading').textContent = 'THIS BROWSER CANNOT SHOW 3D (WEBGL IS OFF).'; return; }
+  document.getElementById('loading').remove();
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.setClearColor(0x101c23);
+  host.prepend(renderer.domElement);
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 400);
+  const ELEV = Math.atan(1 / Math.SQRT2), DIST = 90;
+  let azimuth = Math.PI / 4, zoom = 1;
+  function placeCamera() {
+    camera.position.set(Math.sin(azimuth) * Math.cos(ELEV) * DIST, Math.sin(ELEV) * DIST, Math.cos(azimuth) * Math.cos(ELEV) * DIST);
+    camera.lookAt(0, 0, 0); camera.zoom = zoom; camera.updateProjectionMatrix();
+  }
+  function resize() {
+    const w = host.clientWidth, h = host.clientHeight; if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    const a = w / h, half = a < 1 ? 24 / a * .62 : 17.5;
+    camera.left = -half * a; camera.right = half * a; camera.top = half; camera.bottom = -half; camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(host); resize(); placeCamera();
+
+  scene.add(new THREE.HemisphereLight(0xbfc8ff, 0x2a1e18, .8));
+  const sun = new THREE.DirectionalLight(0xfff1dc, .9);
+  sun.position.set(18, 40, 22); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, { left: -20, right: 20, top: 20, bottom: -20, near: 1, far: 100 });
+  scene.add(sun);
+
+  const mats = {};
+  const lam = hex => mats[hex] || (mats[hex] = new THREE.MeshLambertMaterial({ color: hex }));
+  const pickables = [];
+  function box(w, h, d, color, x, y, z, parent, shadow = true) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), typeof color === 'object' ? color : lam(color));
+    m.position.set(x, y, z); m.castShadow = shadow; m.receiveShadow = true; (parent || scene).add(m); return m;
+  }
+  function cyl(rt, rb, h, color, x, y, z, parent, seg = 16) {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), typeof color === 'object' ? color : lam(color));
+    m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; (parent || scene).add(m); return m;
+  }
+  function label(text, color, size, bg) {
+    const c = document.createElement('canvas'), g = c.getContext('2d');
+    const font = `700 ${size}px 'Atkinson Hyperlegible', system-ui, sans-serif`;
+    g.font = font; c.width = Math.ceil(g.measureText(text).width) + size; c.height = Math.round(size * 1.5);
+    const k = c.getContext('2d'); k.fillStyle = bg; k.fillRect(0, 0, c.width, c.height);
+    k.font = font; k.fillStyle = color; k.textBaseline = 'middle'; k.fillText(text, size * .5, c.height / 2 + 2);
+    const tex = new THREE.CanvasTexture(c); tex.minFilter = THREE.LinearFilter;
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true }));
+    s.userData.w = c.width; s.userData.h = c.height; s.renderOrder = 10; return s;
+  }
+  function nameTag(text, shirt) {
+    const size = 40, c = document.createElement('canvas'), g = c.getContext('2d');
+    const font = `${size}px 'Atkinson Hyperlegible', system-ui, sans-serif`;
+    g.font = font; c.width = Math.ceil(g.measureText(text).width) + size; c.height = Math.round(size * 1.45);
+    const k = c.getContext('2d'); k.fillStyle = 'rgba(18,16,26,.88)'; k.fillRect(0, 0, c.width, c.height);
+    k.fillStyle = shirt; k.fillRect(0, 0, size * .22, c.height);
+    k.font = font; k.fillStyle = '#efe9dc'; k.textBaseline = 'middle'; k.fillText(text, size * .5, c.height / 2 + 2);
+    const tex = new THREE.CanvasTexture(c); tex.minFilter = THREE.LinearFilter;
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true }));
+    s.userData.w = c.width; s.userData.h = c.height; s.renderOrder = 11; return s;
+  }
+  const sprites = [];
+  function fit(s, px) { const upp = (camera.top - camera.bottom) / camera.zoom / host.clientHeight; const k = px / (s.userData.h / 1.45) * upp; s.scale.set(s.userData.w * k, s.userData.h * k, 1); }
+
+  /* ---- the room ---- */
+  const S = 13; // half the room's width
+  (function floor() {
+    const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d');
+    const base = new THREE.Color(0x2c3442), col = n => '#' + base.clone().offsetHSL(0, 0, n).getHexString();
+    for (let y = 0; y < 256; y += 64) for (let x = 0; x < 256; x += 64) { g.fillStyle = col((x + y) % 128 ? 0 : .025); g.fillRect(x, y, 64, 64); g.fillStyle = col(-.08); g.fillRect(x, y, 64, 2); g.fillRect(x, y, 2, 64); }
+    const tex = new THREE.CanvasTexture(c); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(S * 2 / 4, S * 2 / 4);
+    box(S * 2 + 2, .6, S * 2 + 2, 0x17151f, 0, -.3, 0, null, false);
+    box(S * 2, .05, S * 2, new THREE.MeshLambertMaterial({ map: tex }), 0, .025, 0, null, false);
+    const rug = new THREE.Mesh(new THREE.CircleGeometry(4.6, 48), lam(0x22303a)); rug.rotation.x = -Math.PI / 2; rug.position.y = .06; rug.receiveShadow = true; scene.add(rug);
+  })();
+  // Four walls; the two nearest the camera hide so you can always see in.
+  const walls = [];
+  function wall(nx, nz) {
+    const g = new THREE.Group(); scene.add(g);
+    const along = nx === 0, len = S * 2 + 1;
+    const W = (w, h, d, c, x, y, z) => along ? box(w, h, d, c, x, y, z, g) : box(d, h, w, c, z, y, x, g);
+    const p = nx ? nx * S : nz * S;
+    W(len, 3.4, .3, 0x77758a, 0, 1.7, p);
+    W(len, .2, .34, 0x5d5b70, 0, 3.4, p);
+    for (let i = -2; i <= 2; i++) W(3.2, 1.3, .34, new THREE.MeshBasicMaterial({ color: 0x9fd8ff, transparent: true, opacity: .55 }), i * 5, 2.1, p);
+    walls.push({ g, nx, nz }); return g;
+  }
+  wall(0, -1); wall(-1, 0); wall(0, 1); wall(1, 0);
+  function updateWalls() { const cx = Math.sin(azimuth), cz = Math.cos(azimuth); walls.forEach(w => { w.g.visible = (w.nx * cx + w.nz * cz) < 0.2; }); }
+
+  // Office sign on the back wall.
+  const sign = label(officeName.toUpperCase(), '#bfe3ff', 56, 'rgba(34,56,57,0.92)'); sign.position.set(0, 4.6, -S + .4); scene.add(sign); sprites.push([sign, 15]);
+
+  // A few things to make it feel lived in. Add your own: plants, art, a couch, a second room.
+  function plant(x, z, s = 1) {
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.scale.setScalar(s); scene.add(g);
+    cyl(.42, .32, .7, 0xb8734a, 0, .35, 0, g); [[0, 1.2, 0, .6], [.3, 1.6, .1, .45], [-.25, 1.5, -.15, .5]].forEach(([a, b, c, r]) => { const m = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 0), lam(0x3f9a5a)); m.position.set(a, b, c); m.castShadow = true; g.add(m); });
+  }
+  plant(-11.6, -11.6, 1.2); plant(11.6, -11.6, 1.1); plant(-11.6, 11.6, 1); plant(11.6, 11.6, 1.2);
+  // bookshelf
+  (function () { const g = new THREE.Group(); g.position.set(-9.8, 0, -12.3); scene.add(g);
+    box(3.2, 3, .7, 0x86603f, 0, 1.5, 0, g); [.7, 1.5, 2.3].forEach(y => { box(3, .08, .6, 0x5e4330, 0, y - .35, .05, g); for (let i = 0; i < 7; i++) box(.22, .55, .4, SHIRT[(i * 3 + Math.round(y * 2)) % SHIRT.length], -1.2 + i * .38, y, .1, g); }); })();
+  // coffee corner
+  (function () { const g = new THREE.Group(); g.position.set(11.9, 0, 7.6); g.rotation.y = -Math.PI / 2; scene.add(g);
+    box(3, 1.1, .9, 0x3a4658, 0, .55, 0, g); box(3.1, .1, 1, 0xd9d2c3, 0, 1.12, 0, g);
+    box(.6, .8, .5, 0x1d2027, -.8, 1.57, -.05, g); box(.3, .1, .2, 0xff8a2a, -.8, 1.7, .22, g);
+    [.3, .7].forEach(x => cyl(.12, .1, .25, 0xefe9dc, x, 1.3, .1, g)); })();
+  // couch
+  (function () { const g = new THREE.Group(); g.position.set(-9.5, 0, 10.5); g.rotation.y = Math.PI * .75; scene.add(g);
+    box(3.4, .5, 1.2, 0x8c7fb0, 0, .45, 0, g); box(3.4, .9, .3, 0x7a6d9e, 0, .9, -.5, g); box(.3, .7, 1.2, 0x7a6d9e, -1.7, .7, 0, g); box(.3, .7, 1.2, 0x7a6d9e, 1.7, .7, 0, g); })();
+
+  /* ---- the Brain ---- */
+  const brain = new THREE.Group(); scene.add(brain);
+  const ped = cyl(1.5, 1.9, .9, 0x3a3450, 0, .45, 0, brain, 8);
+  cyl(1.55, 1.55, .1, new THREE.MeshBasicMaterial({ color: 0x7ef0ff }), 0, .95, 0, brain, 8);
+  const core = new THREE.Mesh(new THREE.IcosahedronGeometry(1.2, 1), new THREE.MeshLambertMaterial({ color: 0x2fb6c9, emissive: 0x1f8ea0, emissiveIntensity: .9 })); core.position.y = 2.8; brain.add(core);
+  const shell = new THREE.Mesh(new THREE.IcosahedronGeometry(1.5, 1), new THREE.MeshBasicMaterial({ color: 0x7ef0ff, wireframe: true, transparent: true, opacity: .55 })); shell.position.y = 2.8; brain.add(shell);
+  const haloMat = new THREE.MeshBasicMaterial({ color: 0x7ef0ff, transparent: true, opacity: .35, side: THREE.DoubleSide });
+  const halo1 = new THREE.Mesh(new THREE.TorusGeometry(2.1, .04, 6, 48), haloMat); halo1.position.y = 2.8; halo1.rotation.x = Math.PI / 2.4; brain.add(halo1);
+  const halo2 = new THREE.Mesh(new THREE.TorusGeometry(2.4, .03, 6, 48), haloMat); halo2.position.y = 2.8; halo2.rotation.x = Math.PI / 1.8; halo2.rotation.y = .6; brain.add(halo2);
+  const orbiters = [0xff8a2a, 0x7ef0ff, 0x7be08a].map(c => { const s = new THREE.Mesh(new THREE.SphereGeometry(.13, 8, 8), new THREE.MeshBasicMaterial({ color: c })); brain.add(s); return s; });
+  const brainLight = new THREE.PointLight(0x7ef0ff, 1.3, 20, 2); brainLight.position.set(0, 3.2, 0); scene.add(brainLight);
+  [ped, core, shell].forEach(o => { o.userData.pick = 'brain'; pickables.push(o); });
+  const brainSign = label('THE BRAIN', '#bfe3ff', 48, 'rgba(34,56,57,0.92)'); brainSign.position.set(0, 5.1, 0); scene.add(brainSign); sprites.push([brainSign, 13]);
+  const pulses = [];
+  function pulse(color) {
+    const r = new THREE.Mesh(new THREE.RingGeometry(1.6, 1.85, 40), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: .9, side: THREE.DoubleSide }));
+    r.rotation.x = -Math.PI / 2; r.position.y = .1; scene.add(r); pulses.push({ r, t0: clock });
+  }
+
+  /* ---- desks and people ---- */
+  function desk(i, ghost) {
+    const [x, z, yaw] = DESKS[i];
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = yaw; scene.add(g);
+    const m = c => ghost ? new THREE.MeshLambertMaterial({ color: c, transparent: true, opacity: .45 }) : c;
+    box(2.2, .12, 1.1, m(0x86603f), 0, 1, 0, g);
+    [[-1, -.45], [1, -.45], [-1, .45], [1, .45]].forEach(([a, b]) => box(.1, 1, .1, m(0x3e2a1c), a, .5, b, g));
+    box(1.15, .72, .08, m(0x1b1826), 0, 1.55, -.25, g);
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(1, .58), new THREE.MeshBasicMaterial({ color: ghost ? 0x3a3450 : 0x7ef0ff })); screen.position.set(0, 1.55, -.205); g.add(screen);
+    box(.12, .3, .12, m(0x2a2639), 0, 1.2, -.25, g); box(.7, .04, .25, m(0xc8c2d6), -.1, 1.08, .15, g, false);
+    box(.75, .1, .7, m(0x2b2738), 0, .62, 1, g); box(.75, .75, .1, m(0x2b2738), 0, 1, 1.35, g); box(.08, .55, .08, m(0x14121c), 0, .32, 1, g);
+    const seat = new THREE.Vector3(0, .41, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw).add(new THREE.Vector3(x, 0, z));
+    return { g, screen, seat, yaw: yaw + Math.PI };
+  }
+  function person(a, L, ghost) {
+    const mat = c => ghost ? new THREE.MeshLambertMaterial({ color: c, transparent: true, opacity: .5 }) : lam(new THREE.Color(c).getHex());
+    const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
+    const legL = new THREE.Group(), legR = new THREE.Group(); legL.position.set(-.17, .75, 0); legR.position.set(.17, .75, 0);
+    [legL, legR].forEach(l => { box(.26, .75, .3, mat(L.pants), 0, -.375, 0, l); box(.28, .12, .38, mat('#14121c'), 0, -.72, .04, l); body.add(l); });
+    box(.72, .78, .42, mat(L.shirt), 0, 1.15, 0, body);
+    const armL = new THREE.Group(), armR = new THREE.Group(); armL.position.set(-.46, 1.48, 0); armR.position.set(.46, 1.48, 0);
+    [armL, armR].forEach(r => { box(.2, .68, .24, mat(L.shirt), 0, -.3, 0, r); box(.2, .14, .22, mat(L.skin), 0, -.7, 0, r); body.add(r); });
+    const head = new THREE.Group(); head.position.y = 1.86; body.add(head);
+    box(.58, .56, .54, mat(L.skin), 0, 0, 0, head);
+    box(.62, .2, .58, mat(L.hair), 0, .3, 0, head); box(.62, .4, .14, mat(L.hair), 0, .12, -.24, head);
+    box(.08, .08, .02, mat('#1a1420'), -.13, .04, .275, head, false); box(.08, .08, .02, mat('#1a1420'), .13, .04, .275, head, false);
+    if (['long', 'bob', 'ponytail'].includes(L.style)) { box(.14, .72, .5, mat(L.hair), -.3, -.02, -.08, head); box(.14, .72, .5, mat(L.hair), .3, -.02, -.08, head); }
+    if (L.style === 'ponytail') box(.2, .5, .2, mat(L.hair), 0, -.05, -.38, head);
+    if (L.style === 'bun') box(.28, .26, .28, mat(L.hair), 0, .46, -.15, head);
+    if (L.style === 'curly') for (let i = 0; i < 4; i++) box(.2, .18, .3, mat(L.hair), -.24 + i * .16, .35 + (i % 2) * .06, .1, head);
+    if (L.head === 'glasses') box(.5, .06, .03, mat('#0e0c14'), 0, .06, .29, head, false);
+    if (L.head === 'cap') { box(.64, .18, .6, mat(L.cap), 0, .36, 0, head); box(.5, .05, .3, mat(L.cap), 0, .28, .4, head); }
+    if (L.head === 'beanie') { box(.64, .26, .6, mat(L.cap), 0, .36, 0, head); box(.66, .08, .62, mat('#efe9dc'), 0, .22, 0, head); }
+    if (L.head === 'headset') { box(.7, .06, .1, mat('#14121c'), 0, .42, 0, head); box(.08, .2, .2, mat('#14121c'), -.33, .05, 0, head); box(.08, .2, .2, mat('#14121c'), .33, .05, 0, head); }
+    root.traverse(o => { if (o.isMesh) { o.userData.pick = a.id; pickables.push(o); } });
+    scene.add(root);
+    const tag = nameTag(a.name, L.shirt); scene.add(tag); sprites.push([tag, 14]);
+    return { a, L, root, body, legL, legR, armL, armR, head, tag, ghost };
+  }
+  function setPose(p, pose, t) {
+    const s = reduce ? 0 : 1;
+    if (pose === 'sit') { p.body.position.y = -.38; p.legL.rotation.x = p.legR.rotation.x = -1.2; p.armL.rotation.x = -1 + Math.sin(t * 14) * .15 * s; p.armR.rotation.x = -1 + Math.cos(t * 14) * .15 * s; }
+    else if (pose === 'walk') { const w = Math.sin(t * 9) * s; p.body.position.y = Math.abs(Math.cos(t * 9)) * .05 * s; p.legL.rotation.x = w * .6; p.legR.rotation.x = -w * .6; p.armL.rotation.x = -w * .5; p.armR.rotation.x = w * .5; }
+    else if (pose === 'touch') { p.body.position.y = 0; p.legL.rotation.x = p.legR.rotation.x = 0; p.armL.rotation.x = 0; p.armR.rotation.x = -1.6; }
+    else { p.body.position.y = 0; p.legL.rotation.x = p.legR.rotation.x = 0; p.armL.rotation.x = p.armR.rotation.x = 0; }
+  }
+  const STAND = [[-4, 11], [0, 11.5], [4, 11], [-11, 0], [11, 0], [-6, -11], [6, -11], [-11, 6]];
+  const people = [];
+  let clock = 0;
+  function place(a, ghost) {
+    const L = lookFor(a);
+    const p = person(a, L, ghost);
+    if (a.desk != null) { p.desk = desk(a.desk, ghost); p.home = p.desk.seat.clone(); p.homeYaw = p.desk.yaw; }
+    else { const [x, z] = STAND[(a.spot || 0) % STAND.length]; p.home = new THREE.Vector3(x, 0, z); p.homeYaw = Math.atan2(-x, -z); }
+    p.root.position.copy(p.home); p.root.rotation.y = p.homeYaw;
+    p.state = 'home'; p.next = 6 + rng(Number(a.seed) + 11)() * 20;
+    return p;
+  }
+  agents.forEach(a => people.push(place(a, false)));
+
+  // Now and then someone gets up, walks to the Brain to save their work, and goes back.
+  function step(p, dt) {
+    if (p.ghost) { setPose(p, p.desk ? 'sit' : 'stand', clock); return; }
+    const sitting = !!p.desk;
+    if (p.state === 'home') {
+      setPose(p, sitting ? 'sit' : 'stand', clock + p.a.seed);
+      p.next -= dt;
+      if (p.next <= 0 && !reduce) {
+        const ang = Math.atan2(p.home.z, p.home.x);
+        p.target = new THREE.Vector3(Math.cos(ang) * 2.6, 0, Math.sin(ang) * 2.6);
+        p.from = new THREE.Vector3(p.home.x, 0, p.home.z);
+        if (sitting) p.from.add(new THREE.Vector3(p.home.x, 0, p.home.z).normalize().multiplyScalar(-.9));
+        p.root.position.copy(p.from); p.state = 'out';
+      }
+    } else if (p.state === 'out' || p.state === 'back') {
+      const goal = p.state === 'out' ? p.target : p.from;
+      const d = goal.clone().sub(p.root.position); d.y = 0;
+      const dist = d.length();
+      if (dist < .08) {
+        if (p.state === 'out') { p.state = 'touch'; p.wait = 1.6; pulse(new THREE.Color(p.L.shirt).getHex()); }
+        else { p.state = 'home'; p.root.position.copy(p.home); p.root.rotation.y = p.homeYaw; p.next = 18 + Math.random() * 30; }
+      } else {
+        d.normalize(); p.root.position.addScaledVector(d, Math.min(dist, dt * 2.6)); p.root.position.y = 0;
+        p.root.rotation.y = Math.atan2(d.x, d.z); setPose(p, 'walk', clock);
+      }
+    } else if (p.state === 'touch') {
+      p.root.rotation.y = Math.atan2(-p.root.position.x, -p.root.position.z); setPose(p, 'touch', clock);
+      p.wait -= dt; if (p.wait <= 0) p.state = 'back';
+    }
+  }
+
+  /* ---- spawn ---- */
+  const NAMES = ['Mochi', 'Juno', 'Pixel', 'Nori', 'Ziggy', 'Luna', 'Bolt', 'Rio', 'Sage', 'Taro', 'Koda', 'Miso', 'Remy', 'Tala', 'Ube', 'Yuki', 'Zara', 'Bini', 'Dali', 'Ezra', 'Fig', 'Hana', 'Iggy', 'Jojo', 'Kai', 'Lumi', 'Nico', 'Ollie', 'Pia', 'Quinn', 'Rumi', 'Suki', 'Tofu', 'Vivi', 'Wren', 'Yoyo', 'Zen', 'Atlas', 'Pip', 'Echo', 'Nova', 'Indie', 'Coco', 'Biscuit', 'Gizmo', 'Maple', 'Pesto', 'Sunny', 'Toto', 'Kiwi'];
+  const $ = id => document.getElementById(id);
+  const card = $('spawnCard'), nameIn = $('spawnName'), jobIn = $('spawnJob'), cmdOut = $('spawnCmd');
+  let ghost = null, draft = null;
+  function removeGhost() {
+    if (!ghost) return;
+    scene.remove(ghost.root, ghost.tag, ghost.ring); if (ghost.desk) scene.remove(ghost.desk.g);
+    const i = sprites.findIndex(s => s[0] === ghost.tag); if (i >= 0) sprites.splice(i, 1);
+    for (let j = pickables.length - 1; j >= 0; j--) if (pickables[j].userData.pick === draft.id && !agents.some(a => a.id === draft.id)) pickables.splice(j, 1);
+    ghost = null;
+  }
+  function slug(s) { return String(s).toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'agent'; }
+  function writeCmd() {
+    const name = nameIn.value.trim() || draft.name, job = jobIn.value.trim();
+    cmdOut.textContent = `/new-agent ${name} (look ${draft.seed})` + (job ? ` — ${job}` : '');
+  }
+  function newDraft(keepName) {
+    removeGhost();
+    const used = new Set(agents.map(a => a.name.toLowerCase()));
+    const free = NAMES.filter(n => !used.has(n.toLowerCase()));
+    const name = keepName && nameIn.value.trim() ? nameIn.value.trim() : pick(Math.random, free.length ? free : NAMES);
+    const seed = 10000 + Math.floor(Math.random() * 90000);
+    draft = { id: slug(name), name, title: 'New hire', seed };
+    const trial = agents.map(a => Object.assign({}, a)).concat([Object.assign({}, draft)]);
+    seatAll(trial); Object.assign(draft, { desk: trial[trial.length - 1].desk, spot: trial[trial.length - 1].spot });
+    ghost = place(draft, true);
+    ghost.ring = new THREE.Mesh(new THREE.RingGeometry(1.1, 1.3, 40), new THREE.MeshBasicMaterial({ color: 0x7ef0ff, transparent: true, opacity: .8, side: THREE.DoubleSide }));
+    ghost.ring.rotation.x = -Math.PI / 2; ghost.ring.position.set(ghost.home.x, .08, ghost.home.z); scene.add(ghost.ring);
+    $('fullNote').hidden = draft.desk != null;
+    nameIn.value = name; writeCmd();
+  }
+  $('spawnBtn').onclick = () => { $('infoCard').hidden = true; card.hidden = false; newDraft(false); nameIn.focus(); nameIn.select(); };
+  $('reroll').onclick = () => newDraft(false);
+  $('spawnClose').onclick = () => { card.hidden = true; removeGhost(); };
+  nameIn.oninput = () => { if (!ghost) return; const n = nameIn.value.trim() || draft.name; scene.remove(ghost.tag); const i = sprites.findIndex(s => s[0] === ghost.tag); if (i >= 0) sprites.splice(i, 1); ghost.tag = nameTag(n, ghost.L.shirt); scene.add(ghost.tag); sprites.push([ghost.tag, 14]); writeCmd(); };
+  jobIn.oninput = writeCmd;
+  $('copyCmd').onclick = async () => {
+    const b = $('copyCmd'), text = cmdOut.textContent;
+    try { await navigator.clipboard.writeText(text); b.textContent = 'Copied'; }
+    catch (e) { const r = document.createRange(); r.selectNodeContents(cmdOut); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = 'Press ⌘C'; }
+    setTimeout(() => { b.textContent = 'Copy'; }, 1800);
+  };
+
+  /* ---- clicks, drag, zoom ---- */
+  const info = $('infoCard');
+  $('infoClose').onclick = () => { info.hidden = true; };
+  function showInfo(id) {
+    if (id === 'brain') {
+      $('infoName').textContent = 'The Brain';
+      $('infoTitle').textContent = 'The brain/ folder: the office\'s shared memory';
+      $('infoBody').innerHTML = 'Every agent reads it before working and writes back after. Numbered rooms: <code>00-Core</code> (you and the memory rules), <code>03-AI-Office</code> (rules and decisions), <code>08-Inbox</code>, <code>10-Office</code> (board, approvals, state pages, each agent\'s room) and more. Open the <code>brain</code> folder as a vault in Obsidian to read it.';
+    } else {
+      const a = agents.find(x => x.id === id) || (draft && draft.id === id ? draft : null); if (!a) return;
+      $('infoName').textContent = a.name;
+      $('infoTitle').textContent = a.title || '';
+      $('infoBody').innerHTML = a === draft ? 'Not hired yet. Copy the command in the New agent card.' :
+        `Brief: <code>.claude/agents/${a.id}.md</code><br>State: <code>brain/10-Office/state/agent-${a.id}.md</code>` + (a.desk == null ? '<br>No free desk. Ask your Chief to upgrade the office.' : '') +
+        `<br><br>Talk to it in a fresh session: “You are ${a.name}: follow .claude/agents/${a.id}.md.”`;
+    }
+    info.hidden = false;
+  }
+  const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+  const cv = renderer.domElement;
+  let down = null, pinch = null; const touches = new Map();
+  cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); touches.set(e.pointerId, e); down = { x: e.clientX, y: e.clientY, az: azimuth, moved: false }; if (touches.size === 2) { const [p, q] = [...touches.values()]; pinch = { d: Math.hypot(p.clientX - q.clientX, p.clientY - q.clientY), z: zoom }; } });
+  cv.addEventListener('pointermove', e => {
+    if (!touches.has(e.pointerId)) return; touches.set(e.pointerId, e);
+    if (pinch && touches.size === 2) { const [p, q] = [...touches.values()]; zoom = Math.min(3.5, Math.max(.6, pinch.z * Math.hypot(p.clientX - q.clientX, p.clientY - q.clientY) / pinch.d)); placeCamera(); return; }
+    if (!down) return; const dx = e.clientX - down.x; if (Math.abs(dx) > 4) { down.moved = true; cv.classList.add('drag'); }
+    azimuth = down.az - dx * .008; placeCamera();
+  });
+  const up = e => {
+    touches.delete(e.pointerId); cv.classList.remove('drag'); if (touches.size < 2) pinch = null;
+    if (down && !down.moved && e.type === 'pointerup') {
+      const r = cv.getBoundingClientRect(); ptr.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
+      ray.setFromCamera(ptr, camera); const hit = ray.intersectObjects(pickables, false).find(h => h.object.visible);
+      if (hit) showInfo(hit.object.userData.pick);
+    }
+    down = null;
+  };
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  cv.addEventListener('wheel', e => { e.preventDefault(); zoom = Math.min(3.5, Math.max(.6, zoom * (e.deltaY < 0 ? 1.1 : 1 / 1.1))); placeCamera(); }, { passive: false });
+  $('resetView').onclick = () => { azimuth = Math.PI / 4; zoom = 1; placeCamera(); };
+
+  /* ---- loop ---- */
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(.05, (now - last) / 1000); last = now; clock += dt;
+    if (!reduce) { core.rotation.y += dt * .4; shell.rotation.y -= dt * .25; halo1.rotation.z += dt * .3; halo2.rotation.z -= dt * .2;
+      orbiters.forEach((o, i) => { const a = clock * (.8 + i * .3) + i * 2.1; o.position.set(Math.cos(a) * 2.2, 2.8 + Math.sin(a * 1.3) * .5, Math.sin(a) * 2.2); }); }
+    people.forEach(p => step(p, dt)); if (ghost) { step(ghost, dt); ghost.ring.material.opacity = .45 + Math.sin(clock * 4) * .35; }
+    for (let i = pulses.length - 1; i >= 0; i--) { const q = pulses[i], k = (clock - q.t0) / 1.4; if (k >= 1) { scene.remove(q.r); pulses.splice(i, 1); continue; } q.r.scale.setScalar(1 + k * 3); q.r.material.opacity = .9 * (1 - k); }
+    [...people, ...(ghost ? [ghost] : [])].forEach(p => p.tag.position.set(p.root.position.x, p.root.position.y + (p.desk && p.state === 'home' ? 2.75 : 3.15), p.root.position.z));
+    sprites.forEach(([s, px]) => fit(s, px));
+    updateWalls();
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>

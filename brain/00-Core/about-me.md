@@ -10,6 +10,7 @@ _Blank template. Run `/setup` and the Chief fills this in._
 ## The office
 - Office name:
 - Chief's name (what I call my Chief):
+- Office page link (only if the Chief published `office/index.html`):
 
 ## What I want help with first
 1.

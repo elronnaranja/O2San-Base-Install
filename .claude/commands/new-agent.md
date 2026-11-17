@@ -1,33 +1,41 @@
 ---
-description: Add ONE new team member (agent brief, its brain room and state page). Only when the user asks for it.
+description: Add ONE new team member (agent brief, its brain room, state page, and a desk in the office). Only when the user asks for it. Usage /new-agent [Name] [(look 12345)] [— its one job]
+argument-hint: "[Name] [(look 12345)] [— its one job]"
 ---
 
 The user wants a new agent: $ARGUMENTS
 
-Only run this because the user asked. Create exactly one agent.
+Only run this because the user asked (typing it, or pasting the command from the office's Spawn button). Create exactly one agent.
 
-1. Read `brain/about-me.md`, `brain/RULES.md`, `brain/state/INDEX.md`. List existing agents in `.claude/agents/` so you don't make a duplicate.
-2. Short interview (one or two questions at a time):
+1. Read `brain/00-Core/about-me.md` (still the blank template? Say `/setup` comes first and ask whether to go on anyway), `brain/03-AI-Office/RULES.md`, `brain/10-Office/state/INDEX.md`. List existing agents in `.claude/agents/` so you don't make a duplicate.
+2. Read what was given:
+   - **Name:** the first word(s) before `(look …)` or `—`. None given, or the words read like a job rather than a name ("writes my newsletter")? Treat them as the job and pick a random name from the `NAMES` list in `office/index.html` that no agent uses yet (as a name or a file name). Tell the user they can change it.
+   - **Look:** the number in `(look 12345)`. None given? Pick a random whole number from 10000 to 99999. This number sets the agent's random look and desk in the office.
+   - **Job:** the text after `—`, if any.
+3. Short interview, one or two questions at a time, skipping what is already given:
    - Its one job. (One agent, one job. Two jobs? Suggest picking one.)
-   - Its file name (lowercase with dashes, e.g. `writer`) and, if they like, a nickname.
    - What it may do alone and what it must ask first. Sent, public and paid always ask first.
    - Which tools it needs; give only those (e.g. `Read, Write, Edit, Glob, Grep`; add `WebSearch, WebFetch` for research; connectors only if needed).
-   - Its room in the brain: a folder name for its work (e.g. `brain/sales/`). Default: `brain/<name>/`.
    - What a good result looks like (one example).
-3. Write `.claude/agents/<name>.md`:
+   Write the brief's `description` and "How you work" steps yourself from these answers, and show the brief to the user when it's done.
+   File name: the name in lowercase with dashes (`Mochi` → `mochi`). Room: `brain/10-Office/<file-name>/` unless the user wants another.
+4. Write `.claude/agents/<file-name>.md`:
    ```
    ---
-   name: <name>
+   name: <file-name>
    description: <one line: what it does and when to use it>
    tools: <comma-separated list>
    model: inherit
    ---
-   You are <name> (<nickname>). Your one job: <job>.
-   Before each task read brain/about-me.md, brain/RULES.md, brain/lessons/<name>.md (if it exists), brain/state/INDEX.md, brain/state/agent-<name>.md and the state page for the task.
-   Your work goes in brain/<room>/ (file names YYYY-MM-DD-short-slug.md).
+   You are <Name>. Your one job: <job>.
+   Before each task read brain/00-Core/about-me.md, brain/03-AI-Office/RULES.md, brain/10-Office/lessons/<file-name>.md (if it exists), brain/10-Office/state/INDEX.md, brain/10-Office/state/agent-<file-name>.md and the state page for the task.
+   Your work goes in brain/10-Office/<file-name>/ (file names YYYY-MM-DD-short-slug.md).
    How you work: <steps>. Good result: <example>.
-   Ask first: <list>. Never: put secrets in files, delete files, send or publish anything (the Chief puts those in brain/approvals.md).
-   At the end: update your state page and its line in brain/state/INDEX.md, and report to the Chief of Staff.
+   Ask first: <list>. Anything sent, public or paid you only draft: the Chief puts it in brain/10-Office/approvals.md for the user's yes. Never: put secrets in files or delete files.
+   At the end: update your state page and its line in brain/10-Office/state/INDEX.md, and report to the Chief of Staff.
    ```
-4. Create the room `brain/<room>/` (with a one-line `README.md`), `brain/state/agent-<name>.md` from `brain/state/_template.md`, its line under "Agents" in `brain/state/INDEX.md`, and its row in the map in `brain/README.md`.
-5. Tell the user: the agent exists, the Chief hands it matching work, and `/teach <name>: ...` corrects it. Suggest a fresh session to try it.
+5. Create the room `brain/10-Office/<file-name>/` (with a one-line `README.md`), `brain/10-Office/state/agent-<file-name>.md` from `brain/09-Templates/state-page.md`, its line under "Agents" in `brain/10-Office/state/INDEX.md`, and its row in the map in `brain/README.md` (after the last `10-Office/` row; Owner = the file name).
+6. **Add it to the office.** In `office/index.html`, inside the `<script id="team" type="application/json">` block, append one entry at the end of `"agents"` (keep the JSON valid: a comma after the previous entry, no comment lines):
+   `{ "id": "<file-name>", "name": "<Name>", "title": "<its one job, 2-5 words>", "seed": <look number> }`
+   Never change or reorder the entries already there (that would move everyone's desk). The page gives it a random free desk and look from the seed. If `brain/00-Core/about-me.md` has an office page link, publish the office again to that same link.
+7. Tell the user: the agent exists, it has a desk in the office (reload `office/index.html`; if all 8 desks were taken it stands until they say "upgrade the office"), the Chief hands it matching work, and `/teach <file-name>: ...` corrects it. Suggest a fresh session to try it.

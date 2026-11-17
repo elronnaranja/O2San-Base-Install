@@ -1,41 +1,59 @@
 # My AI Office
 
-_AI Office Base: a small starter for your own AI team in Claude Code. One room for now: a **Chief of Staff** and the brain. You name the office and the Chief during `/setup`; the rest of the team follows when you need it._
+_A small starter for your own AI team in Claude Code: a **Chief of Staff**, a numbered brain, and a 3D office you can see. One room for now. You name the office and the Chief during `/setup`; the rest of the team joins when you need it._
 
-## Install (3 steps)
-1. **Get the folder.** Clone it (`git clone <repo-url> my-ai-office`) or download the ZIP and unzip it.
-2. **Open the folder in Claude Code** (desktop app: Code tab → open folder; or run `claude` inside it).
-3. **Type `/setup`.** Name your office and your Chief, answer a few questions. The Chief saves who you are, your rules and your first project.
+## Install (pick one)
+**Easiest: let Claude do it.** Make an empty folder, open it in Claude Code (desktop app: Code tab → choose folder; or run `claude` inside it) and paste:
+```
+Install my AI office in this folder from https://github.com/elronnaranja/O2San-Base-Install (copy every file into this folder, not a subfolder), then run /setup.
+```
 
-That's it. Ask for anything in plain words; the Chief plans it, does it, checks it, and asks before anything is sent, posted or paid.
+**With a terminal:**
+```bash
+git clone https://github.com/elronnaranja/O2San-Base-Install my-ai-office
+```
+Then open the `my-ai-office` folder in Claude Code and type `/setup`.
+
+**Without git:** on the GitHub page press **Code → Download ZIP**, unzip it, open the folder in Claude Code and type `/setup`.
+
+`/setup` takes about 5 minutes: you name your office and your Chief, and the Chief saves who you are, your rules and your first project. Then ask for anything in plain words. The Chief plans it, does it, checks it, and asks before anything is sent, posted or paid.
+
+## See your office
+Double-click `office/index.html`. It opens in your browser: one room, the Brain in the middle, your Chief at a desk. Drag to turn, scroll to zoom, click anyone. Now and then someone walks to the Brain to save their work.
+
+**Spawn a new agent:** press **+ Spawn agent**. A see-through new hire appears at a random free desk with a random name and look (press 🎲 for another). Type its one job, press **Copy**, and paste the command into Claude Code. The Chief writes its brief and brain room and gives it that desk. Reload the page to see it.
+
+The room has 8 free desks. Full? Say "upgrade the office". The room is yours to redesign: more desks, a second room, your colors.
 
 ## Grow it
-- **`/teach <what to change>`** — corrected the Chief? Save it so it sticks. For an agent: `/teach writer: shorter intros`.
-- **`/new-agent`** — when one kind of work keeps coming back, add one team member for it (one agent, one job).
-- **One task, one session.** Start a fresh chat for each new task; the `brain/` folder remembers.
+- **`/teach <what to change>`**: corrected the Chief? Save it so it sticks. For an agent: `/teach writer: shorter intros`.
+- **`/new-agent`** (or the Spawn button): when one kind of work keeps coming back, add one team member for it. One agent, one job.
+- **One task, one session.** Start a fresh chat for each new task; the brain remembers.
 
 ## What's inside
 ```
 CLAUDE.md                  Chief of Staff instructions for Claude Code
 AGENTS.md                  same, for ChatGPT Codex and other tools
+office/index.html          your 3D office (team list inside; /new-agent adds to it)
 .claude/agents/            the team (starts with chief-of-staff.md)
 .claude/commands/          /setup, /teach, /new-agent
-.claude/playbooks/         quick commands ("Status", "What needs me?")
+.claude/playbooks/         quick commands ("Status", "What needs me?", "Open the office")
 .claude/skills/            skills you add later
 tools/                     API scripts you add later (keys in .env)
-brain/README.md            how the memory works + map of rooms
-brain/about-me.md          you, your office's name, your Chief's name
-brain/RULES.md             levels A-D, safe defaults, your own rules
-brain/decisions.md         what you decided, in your words
-brain/board.md             running / waiting / done
-brain/approvals.md         things waiting for your yes
-brain/state/               one page per project and agent (+ INDEX, _template)
-brain/lessons/             what /teach saves
-brain/reports/             longer write-ups
-brain/inbox/               drop zone (archive/ instead of deleting)
+brain/                     the memory; open it in Obsidian as a vault, where it is
+  README.md                how the memory works + map of every folder
+  00-Core/                 about-me.md: you, your office's name, your Chief's name
+  01-Business/             your main work
+  02-Brand/                your brand or second line of work (optional)
+  03-AI-Office/            RULES.md (levels A-D, your rules) and decisions.md
+  04-Personal/             personal notes (never secrets)
+  05-Projects/             one note per bigger project
+  06-Research/             what was looked up
+  07-Daily-Logs/           one short note per day
+  08-Inbox/                drop zone and proposals (archive/ instead of deleting)
+  09-Templates/            state-page.md
+  10-Office/               the office at work: board, approvals, state/, lessons/, reports/, one room per agent
 ```
-
-Each agent you add with `/new-agent` gets its own room in `brain/`.
 
 ## Add-ons (installed with the folder)
 Claude Code offers these when you open the folder (say yes to trust the folder):

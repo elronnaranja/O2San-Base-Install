@@ -9,6 +9,6 @@ credentials*.json
 token*.json
 .claude/settings.local.json
 # Personal notes you don't want in git: uncomment the lines you need
-# brain/about-me.md
-# brain/inbox/
-# brain/state/
+# brain/00-Core/about-me.md
+# brain/08-Inbox/
+# brain/10-Office/state/
