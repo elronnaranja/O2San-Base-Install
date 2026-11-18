@@ -16,8 +16,10 @@ The Chief of Staff and every agent follow these. Order: a direct instruction fro
 5. Update the state page at the end of every task that has one.
 6. Don't invent. Not sure? Say so or ask. Never claim done without checking.
 7. Only what the user approves becomes official. Anything you work out yourself (a new rule, a change to a rule, a guess about how they work) goes in `brain/08-Inbox/` as a file named `YYYY-MM-DD-proposal-short-slug.md`. It only moves into `RULES.md`, `decisions.md` or another official note after their yes.
-8. One home per rule. Each rule lives in exactly one place: here (for everyone) or in one agent's lessons file. When a file passes about 30 rules, or rules start to repeat or clash, suggest `/tidy`.
+8. One home per rule. Each rule lives in exactly one of three places: here, if it's for everyone and every task (keep this file short); one agent's lessons file, if it's for that agent; or a skill in `.claude/skills/`, if it's only for one client, one brand or one kind of work (it loads only when that work comes up). When a file passes about 30 rules, or rules start to repeat or clash, suggest `/tidy`.
 9. The guard in `.claude/hooks/guard.py` enforces three of these for real: no reading `.env`, ask before deleting, ask before anything sent, posted, paid or deleted through a connector. Don't work around it.
+10. Keep the start light. What every session reads first stays short: `10-Office/state/INDEX.md` is one line per page (history goes on the page itself), and `10-Office/approvals.md` holds only open items (decided rows move to `10-Office/approvals-archive/YYYY-MM.md` each month). A heavy start buries the rules that matter.
+11. Keep the team small. Most offices need 3 to 7 agents. Before adding one, check whether an existing agent can take the work. An agent that sits unused for a month gets merged into another, with the user's yes.
 
 ## My rules
 _Added by `/setup` and the Chief, one line each, with dates. Full wording in `03-AI-Office/decisions.md`._

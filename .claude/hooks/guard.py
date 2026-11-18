@@ -13,6 +13,8 @@ import sys
 
 SECRET_FILE = re.compile(r"(^|[\\/\s'\"=:])\.env(\.(?!example\b)[\w-]+)?(?=$|[\s'\";|&)<>])")
 DELETES = re.compile(r"(^|[;&|(\s])(rm|rmdir|del|erase|rd|unlink|shred|Remove-Item|trash)(\s|$)|git\s+(clean\b|reset\s+--hard|push\s+.*(--force|-f\b))|find\s.*-delete", re.I)
+# Connector actions that send or publish but whose names don't say so. Add yours here, e.g. "mcp__myposter__createPost".
+EXTRA_OUTWARD_TOOLS = set()
 OUTWARD = re.compile(r"(send|reply|forward|post|publish|share|schedul|invite|pay|charge|refund|transfer|delete|trash|remove|archive_|unpublish)", re.I)
 
 
@@ -44,7 +46,7 @@ def main():
 
     if tool.startswith("mcp__"):
         action = tool.split("__")[-1]
-        if OUTWARD.search(action):
+        if tool in EXTRA_OUTWARD_TOOLS or OUTWARD.search(action):
             answer("ask", "Rule: anything sent, public, paid or deleted needs your yes first (brain/10-Office/approvals.md). Approve this one action?")
 
     sys.exit(0)

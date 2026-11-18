@@ -28,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 .claude/hooks/guard.py 2>/dev/null || python .claude/hooks/guard.py 2>/dev/null || true"
+            "command": "python3 .claude/hooks/guard.py 2>/dev/null || python .claude/hooks/guard.py"
           }
         ]
       }

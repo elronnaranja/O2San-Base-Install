@@ -7,6 +7,7 @@ The user wants a new agent: $ARGUMENTS
 
 Only run this because the user asked (typing it, or pasting the command from the office's Spawn button). Create exactly one agent.
 
+0. Check the team first: if an existing agent in `.claude/agents/` could take this work, say so and suggest teaching that agent instead. Most offices need 3 to 7 agents (`RULES.md` 11). Go ahead if the user still wants a new one.
 1. Read `brain/00-Core/about-me.md` (still the blank template? Say `/setup` comes first and ask whether to go on anyway), `brain/03-AI-Office/RULES.md`, `brain/10-Office/state/INDEX.md`. List existing agents in `.claude/agents/` so you don't make a duplicate.
 2. Read what was given:
    - **Name:** the first word(s) before `(look …)` or `—`. None given, or the words read like a job rather than a name ("writes my newsletter")? Treat them as the job and pick a random name from the `NAMES` list in `office/index.html` that no agent uses yet (as a name or a file name). Tell the user they can change it.

@@ -31,6 +31,7 @@ It starts with one table, the Chief's. Every new agent brings its own, up to 9. 
 - **`/teach <what to change>`**: corrected the Chief? Save it so it sticks. For an agent: `/teach writer: shorter intros`.
 - **`/new-agent`** (or the Spawn button): when one kind of work keeps coming back, add one team member for it. One agent, one job.
 - **`/tidy`**: every few weeks, or when the Chief suggests it, tidy the rules: duplicates merged, clashes settled, each rule in one place.
+- **Keep it small.** Most offices need 3 to 7 agents, short rules and a short index. Say "Merge agents" when two start doing the same job. (I learned this the hard way: see the article.)
 - **One task, one session.** Start a fresh chat for each new task; the brain remembers.
 
 ## What's inside

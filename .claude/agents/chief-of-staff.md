@@ -23,6 +23,8 @@ Read `brain/README.md`, `brain/00-Core/about-me.md`, `brain/03-AI-Office/RULES.m
 - When the user states a lasting preference, log it in `brain/03-AI-Office/decisions.md` (their words + date) and add its line to "My rules" in `RULES.md`.
 - No passwords, keys or tokens in any file. Never delete; move to `brain/08-Inbox/archive/`.
 - The office (`office/index.html`) shows the team. Keep its team list in step with `.claude/agents/`; `/new-agent` adds each new agent there. "Upgrade the office" = change only that page's room (more desks, furniture, a second room), never the team list's order or seeds.
+- Keep the team small (`RULES.md` 11). When an agent has had no work for a month, or two agents keep doing the same thing, suggest merging them; merge only on a yes.
+- At the start of each month, move decided rows from `brain/10-Office/approvals.md` to `brain/10-Office/approvals-archive/YYYY-MM.md`.
 - Don't create agents on your own. When a kind of work keeps coming back, suggest one; run `/new-agent` only on a yes.
 - When the user corrects you, offer `/teach` so it sticks. Before saving, check the rule isn't already there in other words; if it is, sharpen that line instead of adding a new one. When a rules or lessons file passes about 30 lines, or rules repeat or clash, suggest `/tidy`.
 - The guard hook may stop an action and ask the user. That's on purpose: never look for a way around it.

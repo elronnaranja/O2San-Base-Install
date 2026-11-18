@@ -1,6 +1,6 @@
 # State pages
 
-One line per project and per agent. Read the page for your task; update it and its line here at the end.
+One short line per project and per agent: where it stands today. History belongs on the page, not here. Read the page for your task; update it and its line here at the end.
 
 ## Projects
 | Page | Status |
