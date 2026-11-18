@@ -19,7 +19,7 @@ Only run this because the user asked (typing it, or pasting the command from the
    - What a good result looks like (one example).
    Write the brief's `description` and "How you work" steps yourself from these answers, and show the brief to the user when it's done.
    File name: the name in lowercase with dashes (`Mochi` → `mochi`). Room: `brain/10-Office/<file-name>/` unless the user wants another.
-4. Write `.claude/agents/<file-name>.md`:
+4. Write `.claude/agents/<file-name>.md`. Claude Code always asks before it writes inside `.claude/`; tell the user to expect that prompt and to approve it. If it wasn't approved, say so plainly and offer to try again: without that file the agent can't work.
    ```
    ---
    name: <file-name>

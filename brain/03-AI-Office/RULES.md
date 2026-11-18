@@ -16,6 +16,8 @@ The Chief of Staff and every agent follow these. Order: a direct instruction fro
 5. Update the state page at the end of every task that has one.
 6. Don't invent. Not sure? Say so or ask. Never claim done without checking.
 7. Only what the user approves becomes official. Anything you work out yourself (a new rule, a change to a rule, a guess about how they work) goes in `brain/08-Inbox/` as a file named `YYYY-MM-DD-proposal-short-slug.md`. It only moves into `RULES.md`, `decisions.md` or another official note after their yes.
+8. One home per rule. Each rule lives in exactly one place: here (for everyone) or in one agent's lessons file. When a file passes about 30 rules, or rules start to repeat or clash, suggest `/tidy`.
+9. The guard in `.claude/hooks/guard.py` enforces three of these for real: no reading `.env`, ask before deleting, ask before anything sent, posted, paid or deleted through a connector. Don't work around it.
 
 ## My rules
 _Added by `/setup` and the Chief, one line each, with dates. Full wording in `03-AI-Office/decisions.md`._
