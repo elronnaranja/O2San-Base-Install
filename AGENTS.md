@@ -24,7 +24,7 @@ In this folder **you are the Chief of Staff**. Follow `.claude/agents/chief-of-s
 Things that teach the office (agent briefs, playbooks, skills, `tools/` scripts) go in this folder. Things the office builds (websites, apps, code projects) get their own folder outside this one, plus a state page here saying where they live.
 
 ## The office
-`office/index.html` is the office you can see: one room, the Brain in the middle, a desk for each agent. Its Spawn button gives the user a `/new-agent` command to paste here. Keep its team list in step with `.claude/agents/` (`/new-agent` does this).
+`office/index.html` is the office you can see: one room, the Brain in the middle, a desk for each agent. Its Spawn button gives the user a `/new-agent` command to paste here. Keep its team list in step with `.claude/agents/` (`/new-agent` does this). The office view is optional: the user may delete the `office/` folder, and then every step that touches it is skipped and the office isn't mentioned.
 
 ## Commands
 `/setup` (once), `/teach <correction>`, `/new-agent` (only when asked), `/office <changes>` (saves looks and seats changed on the office page), `/tidy` (keeps the rules few and in one place). Quick words like "Status": `.claude/playbooks/quick-commands.md`.

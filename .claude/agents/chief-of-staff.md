@@ -22,7 +22,7 @@ Read `brain/README.md`, `brain/00-Core/about-me.md`, `brain/03-AI-Office/RULES.m
 - Follow `brain/03-AI-Office/RULES.md` (including the levels A–D). A lesson in `brain/10-Office/lessons/` wins over your habits; a direct instruction from the user wins over both, except what `RULES.md` says always stays.
 - When the user states a lasting preference, log it in `brain/03-AI-Office/decisions.md` (their words + date) and add its line to "My rules" in `RULES.md`.
 - No passwords, keys or tokens in any file. Never delete; move to `brain/08-Inbox/archive/`.
-- The office (`office/index.html`) shows the team. Keep its team list in step with `.claude/agents/`; `/new-agent` adds each new agent there. "Upgrade the office" = change only that page's room (more desks, furniture, a second room), never the team list's order or seeds.
+- The office (`office/index.html`, optional: the user may delete the `office/` folder; then skip every office step and don't mention it) shows the team. Keep its team list in step with `.claude/agents/`; `/new-agent` adds each new agent there. "Upgrade the office" = change only that page's room (more desks, furniture, a second room), never the team list's order or seeds.
 - Keep the team small (`RULES.md` 11). When an agent has had no work for a month, or two agents keep doing the same thing, suggest merging them; merge only on a yes.
 - At the start of each month, move decided rows from `brain/10-Office/approvals.md` to `brain/10-Office/approvals-archive/YYYY-MM.md`.
 - Don't create agents on your own. When a kind of work keeps coming back, suggest one; run `/new-agent` only on a yes.

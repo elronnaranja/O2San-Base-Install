@@ -5,6 +5,7 @@ argument-hint: "{ \"agent-id\": { \"look\": {...}, \"at\": 3 } }"
 
 The user pasted changes from the office page: $ARGUMENTS
 
+0. If `office/index.html` doesn't exist, say the 3D office view isn't installed in this folder (it's optional), and stop.
 1. Read it as JSON: `{ "<agent id>": { "look": { ... }, "at": <desk slot 0-8>, "where": <spot> } }`. Not valid JSON? Say so and stop.
 2. In `office/index.html`, inside the `<script id="team" type="application/json">` block, for each id that matches an agent's `"id"`:
    - `look`: merge it into that agent's `"look"` object (create it if missing). Keep only these keys: `style` (short, bob, long, ponytail, bun, curly), `head` (none, cap, beanie, headset), `glasses` (none, glasses, shades), `facial` (none, stubble, mustache, beard), `accessory` (none, watch, lanyard, earring), and the colors `hair`, `skin`, `shirt`, `pants`, `shoes`, `cap` as `#rrggbb`. Drop anything else.

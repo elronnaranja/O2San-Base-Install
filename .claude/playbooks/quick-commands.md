@@ -10,8 +10,8 @@ Short things the user can say. The Chief does the matching action.
 | "change A-00X: <what>" | Changes the draft, shows it again, and marks it `changed` once approved. |
 | "approve proposal <file>" / "reject proposal <file>" | Yes: applies it (a rule goes to `RULES.md` and `decisions.md`, a fact to `about-me.md` or a state page). Either way, moves the file to `brain/08-Inbox/archive/`. |
 | "Sort the inbox" | Files everything in `brain/08-Inbox/` into the right state page or report; asks about anything unclear. Leaves `archive/` alone, and leaves proposals until the user decides. |
-| "Open the office" | Says: double-click `office/index.html`. In the Claude desktop app it can also publish it as a private artifact and give the link; it saves the link in `brain/00-Core/about-me.md` → The office and republishes to that same link after each change. |
-| "Upgrade the office" | Asks what they want (more desks, a second room, furniture, colors), then edits only the room part of `office/index.html` and keeps the team list as is. |
+| "Open the office" | No `office/index.html`? Says the 3D office view isn't installed (it's optional). Otherwise says: double-click `office/index.html`. In the Claude desktop app it can also publish it as a private artifact and give the link; it saves the link in `brain/00-Core/about-me.md` → The office and republishes to that same link after each change. |
+| "Upgrade the office" | No `office/index.html`? Says the office view isn't installed. Otherwise asks what they want (more desks, a second room, furniture, colors), then edits only the room part of `office/index.html` and keeps the team list as is. |
 | "Merge agents" | Lists agents with no work in the last month or overlapping jobs, proposes which to merge and how; changes nothing without a yes. |
 | "Tidy my rules" | Runs `/tidy`: merges duplicate rules, settles clashes, moves each rule to one home. Changes nothing without a yes. |
 | "Stop all" / "Resume" | Stops every running agent and waits / carries on. |

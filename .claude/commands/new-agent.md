@@ -1,5 +1,5 @@
 ---
-description: Add ONE new team member (agent brief, its brain room, state page, and a desk in the office). Only when the user asks for it. Usage /new-agent [Name] [(look 12345)] [— its one job]
+description: Add ONE new team member (agent brief, its brain room, state page, and a desk in the office if the office view is installed). Only when the user asks for it. Usage /new-agent [Name] [(look 12345)] [— its one job]
 argument-hint: "[Name] [(look 12345)] [— its one job]"
 ---
 
@@ -10,8 +10,8 @@ Only run this because the user asked (typing it, or pasting the command from the
 0. Check the team first: if an existing agent in `.claude/agents/` could take this work, say so and suggest teaching that agent instead. Most offices need 3 to 7 agents (`RULES.md` 11). Go ahead if the user still wants a new one.
 1. Read `brain/00-Core/about-me.md` (still the blank template? Say `/setup` comes first and ask whether to go on anyway), `brain/03-AI-Office/RULES.md`, `brain/10-Office/state/INDEX.md`. List existing agents in `.claude/agents/` so you don't make a duplicate.
 2. Read what was given:
-   - **Name:** the first word(s) before `(look …)` or `—`. None given, or the words read like a job rather than a name ("writes my newsletter")? Treat them as the job and pick a random name from the `NAMES` list in `office/index.html` that no agent uses yet (as a name or a file name). Tell the user they can change it.
-   - **Look:** the number in `(look 12345)`. None given? Pick a random whole number from 10000 to 99999. This number sets the agent's random look and desk in the office.
+   - **Name:** the first word(s) before `(look …)` or `—`. None given, or the words read like a job rather than a name ("writes my newsletter")? Treat them as the job and pick a random name that no agent uses yet (as a name or a file name): from the `NAMES` list in `office/index.html` if that file exists, otherwise from Mochi, Juno, Pixel, Nori, Ziggy, Luna, Bolt, Rio, Sage, Taro, Koda, Miso, Remy, Tala, Yuki, Zara, Hana, Kai, Nova, Kiwi. Tell the user they can change it.
+   - **Look:** the number in `(look 12345)`. None given? Pick a random whole number from 10000 to 99999. This number sets the agent's random look and desk in the office (if the office view is installed).
    - **Job:** the text after `—`, if any.
 3. Short interview, one or two questions at a time, skipping what is already given:
    - Its one job. (One agent, one job. Two jobs? Suggest picking one.)
@@ -36,7 +36,7 @@ Only run this because the user asked (typing it, or pasting the command from the
    At the end: update your state page and its line in brain/10-Office/state/INDEX.md, and report to the Chief of Staff.
    ```
 5. Create the room `brain/10-Office/<file-name>/` (with a one-line `README.md`), `brain/10-Office/state/agent-<file-name>.md` from `brain/09-Templates/state-page.md`, its line under "Agents" in `brain/10-Office/state/INDEX.md`, and its row in the map in `brain/README.md` (after the last `10-Office/` row; Owner = the file name).
-6. **Add it to the office.** In `office/index.html`, inside the `<script id="team" type="application/json">` block, append one entry at the end of `"agents"` (keep the JSON valid: a comma after the previous entry, no comment lines):
+6. **Add it to the office** (only if `office/index.html` exists; the office view is optional, so skip this step if it was deleted). In `office/index.html`, inside the `<script id="team" type="application/json">` block, append one entry at the end of `"agents"` (keep the JSON valid: a comma after the previous entry, no comment lines):
    `{ "id": "<file-name>", "name": "<Name>", "title": "<its one job, 2-5 words>", "seed": <look number> }`
    Never change or reorder the entries already there (that would move everyone's desk). The page gives it a random free desk and look from the seed. If `brain/00-Core/about-me.md` has an office page link, publish the office again to that same link.
-7. Tell the user: the agent exists, it has its own table in the office (reload `office/index.html`; it brings its own table, up to 9; past that it stands until they say "upgrade the office"), the Chief hands it matching work, and `/teach <file-name>: ...` corrects it. Suggest a fresh session to try it.
+7. Tell the user: the agent exists, the Chief hands it matching work, and `/teach <file-name>: ...` corrects it. Only if `office/index.html` exists, add that it has its own table in the office (reload `office/index.html`; it brings its own table, up to 9; past that it stands until they say "upgrade the office"). No office file: don't mention the office, not even that you skipped it. Suggest a fresh session to try it.

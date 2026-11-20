@@ -1,6 +1,6 @@
 # My AI Office
 
-_A small starter for your own AI team in Claude Code: a **Chief of Staff**, a numbered brain, and a 3D office you can see. One room for now. You name the office and the Chief during `/setup`; the rest of the team joins when you need it._
+_A small starter for your own AI team in Claude Code: a **Chief of Staff**, a numbered brain, and an optional 3D office you can see. One room for now. You name the office and the Chief during `/setup`; the rest of the team joins when you need it._
 
 ## Install (pick one)
 **Easiest: let Claude do it.** Make an empty folder, open it in Claude Code (desktop app: Code tab → choose folder; or run `claude` inside it) and paste:
@@ -18,7 +18,9 @@ Then open the `my-ai-office` folder in Claude Code and type `/setup`.
 
 `/setup` takes about 5 minutes: you name your office and your Chief, and the Chief saves who you are, your rules and your first project. Then ask for anything in plain words. The Chief plans it, does it, checks it, and asks before anything is sent, posted or paid.
 
-## See your office
+## See your office (optional)
+The 3D office view is optional. Don't want it? Delete the `office/` folder: setup, new agents and everything else keep working, they just skip the office.
+
 Double-click `office/index.html`. It opens in your browser: one room, the Brain in the middle, your Chief at a desk. Drag to turn, scroll to zoom, click anyone. Now and then someone walks to the Brain to save their work.
 
 **Spawn a new agent:** press **+ Spawn agent**. A see-through new hire appears at a random free desk with a random name and look (press 🎲 for another). Type its one job, press **Copy**, and paste the command into Claude Code. The Chief writes its brief and brain room and gives it that desk. Claude Code asks before writing the agent's file into `.claude/agents/`: say yes. Reload the page to see it.
@@ -38,7 +40,7 @@ It starts with one table, the Chief's. Every new agent brings its own, up to 9. 
 ```
 CLAUDE.md                  Chief of Staff instructions for Claude Code
 AGENTS.md                  same, for ChatGPT Codex and other tools
-office/index.html          your 3D office (team list inside; /new-agent adds to it)
+office/index.html          your 3D office, optional (team list inside; /new-agent adds to it; delete office/ if you don't want it)
 .claude/agents/            the team (starts with chief-of-staff.md)
 .claude/commands/          /setup, /teach, /new-agent, /office, /tidy
 .claude/hooks/guard.py     the guard: blocks key files, asks before deleting or sending
