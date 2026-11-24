@@ -15,6 +15,7 @@ SECRET_FILE = re.compile(r"(^|[\\/\s'\"=:])\.env(\.(?!example\b)[\w-]+)?(?=$|[\s
 DELETES = re.compile(r"(^|[;&|(\s])(rm|rmdir|del|erase|rd|unlink|shred|Remove-Item|trash)(\s|$)|git\s+(clean\b|reset\s+--hard|push\s+.*(--force|-f\b))|find\s.*-delete", re.I)
 # Connector actions that send or publish but whose names don't say so. Add yours here, e.g. "mcp__myposter__createPost".
 EXTRA_OUTWARD_TOOLS = set()
+UNTRACK = re.compile(r"git\s+rm\s+(-[\w-]+\s+)*--cached\b(\s+-[\w-]+)*", re.I)
 OUTWARD = re.compile(r"(send|reply|forward|post|publish|share|schedul|invite|pay|charge|refund|transfer|delete|trash|remove|archive_|unpublish)", re.I)
 
 
@@ -41,7 +42,8 @@ def main():
         cmd = str(args.get("command", ""))
         if SECRET_FILE.search(cmd):
             answer("deny", "Rule: keys live in .env and are never read or printed. Scripts in tools/ load it themselves.")
-        if DELETES.search(cmd):
+        # "git rm --cached" only stops git tracking a path (e.g. the brain link); the files stay. Real deletes still ask.
+        if DELETES.search(UNTRACK.sub("git untrack", cmd)):
             answer("ask", "Rule: never delete. Move it to brain/08-Inbox/archive/ instead, or approve this one deletion.")
 
     if tool.startswith("mcp__"):
