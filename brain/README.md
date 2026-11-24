@@ -36,4 +36,4 @@ The folders are numbered so they always sort the same way, in Obsidian and in an
 
 Each agent added with `/new-agent` gets its own room in `10-Office/` (for example `10-Office/writer/`) and a row here.
 
-Works as a plain folder. For linked notes (`[[page-name]]`), install Obsidian, choose "Open folder as vault" and pick this `brain` folder where it is. Don't move it: the office reads it from here.
+This folder is the brain. `/setup` moves it out of the office to its own folder (default: `Brain`, next to the office) and leaves a `brain` link in the office, so the office and your notes stay separate. Works as a plain folder. For linked notes (`[[page-name]]`), install Obsidian, choose "Open folder as vault" and pick this folder (the moved one, not the link). Moving it again later? Say "Move my brain out" so the Chief fixes the link: `.claude/playbooks/brain-outside.md` in the office.

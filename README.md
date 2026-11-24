@@ -16,7 +16,7 @@ Then open the `my-ai-office` folder in Claude Code and type `/setup`.
 
 **Without git:** on the GitHub page press **Code → Download ZIP**, unzip it, open the folder in Claude Code and type `/setup`.
 
-`/setup` takes about 5 minutes: you name your office and your Chief, and the Chief saves who you are, your rules and your first project. Then ask for anything in plain words. The Chief plans it, does it, checks it, and asks before anything is sent, posted or paid.
+`/setup` takes about 5 minutes: you name your office and your Chief, and the Chief saves who you are, your rules and your first project. It also moves the brain (your notes) out of the office into its own `Brain` folder next to it and leaves a link behind. Open that `Brain` folder in Obsidian ("Open folder as vault"). Office and notes stay separate: you can reinstall the office without touching your notes. Back the `Brain` folder up on its own (Obsidian Sync, iCloud, OneDrive, Google Drive). Set up before this change? Say "Move my brain out". Then ask for anything in plain words. The Chief plans it, does it, checks it, and asks before anything is sent, posted or paid.
 
 ## See your office (optional)
 The 3D office view is optional. Don't want it? Delete the `office/` folder: setup, new agents and everything else keep working, they just skip the office.
@@ -44,10 +44,10 @@ office/index.html          your 3D office, optional (team list inside; /new-agen
 .claude/agents/            the team (starts with chief-of-staff.md)
 .claude/commands/          /setup, /teach, /new-agent, /office, /tidy
 .claude/hooks/guard.py     the guard: blocks key files, asks before deleting or sending
-.claude/playbooks/         quick commands ("Status", "What needs me?", "Open the office")
+.claude/playbooks/         quick commands ("Status", "What needs me?", "Move my brain out") + brain-outside.md
 .claude/skills/            skills you add later
 tools/                     API scripts you add later (keys in .env)
-brain/                     the memory; open it in Obsidian as a vault, where it is
+brain/                     the memory; /setup moves it to its own folder next to the office (open THAT in Obsidian) and leaves a link here
   README.md                how the memory works + map of every folder
   00-Core/                 about-me.md: you, your office's name, your Chief's name
   01-Business/             your main work

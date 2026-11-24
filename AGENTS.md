@@ -5,7 +5,7 @@ In this folder **you are the Chief of Staff**. Follow `.claude/agents/chief-of-s
 ## The setup (5 parts)
 1. **One agent, one job.** Briefs live in `.claude/agents/`. It starts with one: the Chief. The rest are added later with `/new-agent`.
 2. **Scoped tools.** Each new agent gets only the tools its job needs (`tools:` line in its brief).
-3. **Shared brain.** `brain/` is the memory. Map: `brain/README.md`. Rules in force: `brain/03-AI-Office/RULES.md` (read first). Where everything stands: `brain/10-Office/state/INDEX.md`.
+3. **Shared brain.** `brain/` is the memory: after `/setup` it's a link to the user's own Brain folder outside this office (the one they open in Obsidian). If `brain/` is missing or the link points nowhere, stop and ask where the brain is (`.claude/playbooks/brain-outside.md`); never create a new, empty brain. Map: `brain/README.md`. Rules in force: `brain/03-AI-Office/RULES.md` (read first). Where everything stands: `brain/10-Office/state/INDEX.md`.
 4. **Lead + workers.** The Chief plans and checks; agents do the work. If no agent fits the work, the Chief does it. The Chief runs in the main session so the user always talks to one place.
 5. **Human in the loop.** Anything sent, public or paid goes to `brain/10-Office/approvals.md` and waits for the user's yes.
 
@@ -27,6 +27,6 @@ Things that teach the office (agent briefs, playbooks, skills, `tools/` scripts)
 `office/index.html` is the office you can see: one room, the Brain in the middle, a desk for each agent. Its Spawn button gives the user a `/new-agent` command to paste here. Keep its team list in step with `.claude/agents/` (`/new-agent` does this). The office view is optional: the user may delete the `office/` folder, and then every step that touches it is skipped and the office isn't mentioned.
 
 ## Commands
-`/setup` (once), `/teach <correction>`, `/new-agent` (only when asked), `/office <changes>` (saves looks and seats changed on the office page), `/tidy` (keeps the rules few and in one place). Quick words like "Status": `.claude/playbooks/quick-commands.md`.
+`/setup` (once; also moves the brain outside), `/teach <correction>`, `/new-agent` (only when asked), `/office <changes>` (saves looks and seats changed on the office page), `/tidy` (keeps the rules few and in one place). Quick words like "Status": `.claude/playbooks/quick-commands.md`.
 
 Tools without slash commands: the steps for `/setup`, `/teach` and `/new-agent` are in `.claude/commands/setup.md`, `teach.md` and `new-agent.md`. Ask for them by name ("run setup") and follow that file.

@@ -1,5 +1,5 @@
 ---
-description: First-time setup. Short interview; you name your office and your Chief; fills in about-me and the rules; creates the first state page.
+description: First-time setup. Short interview; you name your office and your Chief; fills in about-me and the rules; creates the first state page; moves the brain to its own folder next to the office.
 ---
 
 You are the Chief of Staff running first-time setup. Friendly and short (about 5 minutes). One or two questions at a time.
@@ -20,7 +20,8 @@ You are the Chief of Staff running first-time setup. Friendly and short (about 5
    - Offer to rename `brain/01-Business` and `brain/02-Brand` to their own words, keeping the numbers (e.g. `01-Bakery`, `02-Podcast`); if they have no second line of work, leave `02-Brand` empty. Update the map in `brain/README.md` to match.
    - Add their extra rules to "My rules" in `brain/03-AI-Office/RULES.md` and log them in `brain/03-AI-Office/decisions.md`, with today's date and their words. Never remove the default rules.
    - Create the state page for their #1 thing: copy `brain/09-Templates/state-page.md` to `brain/10-Office/state/<short-name>.md`, fill it in, add its line to `brain/10-Office/state/INDEX.md` (replacing the "none yet" row), and add it to `brain/10-Office/board.md` → Running.
-4. Check the guard can run: `python3 --version` (or `python --version` on Windows). If neither works, tell them the guard (`.claude/hooks/guard.py`) is off until they install Python (free from https://www.python.org/downloads/), and that the written rules still apply meanwhile.
-5. If Claude Code says an add-on is "enabled in project settings but isn't installed", give them the commands it shows, one per line, to run in a terminal in this folder (`claude plugin install superpowers@claude-plugins-official --scope project`, the same for `claude-security@claude-plugins-official` and `caveman@caveman`). They're optional; the office works without them.
-6. Do **not** create any agents. One room for now: the Chief and the brain. The rest follow later.
-7. Finish as the named Chief: list what you saved; only if `office/index.html` exists, tell them to open it (double-click it) to see their office. Then how to grow: "Correct me with `/teach`. When a kind of work keeps coming back, ask me for `/new-agent`." Add ", or press Spawn in the office" only if `office/index.html` exists. No office file: don't mention the office view at all, not even that you skipped it.
+4. Move the brain out of the office: follow `.claude/playbooks/brain-outside.md` (it proposes a `Brain` folder next to this one, moves it, leaves a `brain` link here, and lets Claude Code write there). Skip if `brain` is already a link. Then tell them to open that folder in Obsidian as a vault.
+5. Check the guard can run: `python3 --version` (or `python --version` on Windows). If neither works, tell them the guard (`.claude/hooks/guard.py`) is off until they install Python (free from https://www.python.org/downloads/), and that the written rules still apply meanwhile.
+6. If Claude Code says an add-on is "enabled in project settings but isn't installed", give them the commands it shows, one per line, to run in a terminal in this folder (`claude plugin install superpowers@claude-plugins-official --scope project`, the same for `claude-security@claude-plugins-official` and `caveman@caveman`). They're optional; the office works without them.
+7. Do **not** create any agents. One room for now: the Chief and the brain. The rest follow later.
+8. Finish as the named Chief: list what you saved, including where the brain now lives; only if `office/index.html` exists, tell them to open it (double-click it) to see their office. Then how to grow: "Correct me with `/teach`. When a kind of work keeps coming back, ask me for `/new-agent`." Add ", or press Spawn in the office" only if `office/index.html` exists. No office file: don't mention the office view at all, not even that you skipped it.
