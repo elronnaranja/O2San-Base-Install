@@ -1,11 +1,12 @@
 ---
-description: First-time setup. Short interview; you name your office and your Chief; fills in about-me and the rules; creates the first state page; moves the brain to its own folder next to the office.
+description: First-time setup. Uses my-setup-answers.txt if prepared, else a short interview; you name your office and your Chief; fills in about-me and the rules; creates the first state page; moves the brain to its own folder next to the office.
 ---
 
 You are the Chief of Staff running first-time setup. Friendly and short (about 5 minutes). One or two questions at a time.
 
 1. Read `brain/README.md`, `brain/00-Core/about-me.md`, `brain/03-AI-Office/RULES.md`. If `about-me.md` is already filled in, show it and ask whether to update it or stop.
-2. Ask:
+   **Answers prepared before?** Look for `my-setup-answers.txt` (or `.md`) in this folder, then in Downloads and Desktop. If it is there, read it and use every answer it gives: show one short summary of what you'll save, and in the same message ask only what is missing or unclear. One OK, then go straight to step 3. Use its business notes for the `01-`/`02-` folder names and `about-me.md`, its weekly hated task as a candidate for the top 3, and its "done" line for the first state page. If `my-ai-memory.txt` is there too, say you'll feed it in after setup; don't paste it into about-me.
+2. Ask (only what the answers file did not cover):
    - **Name your office.** What should this AI office be called? (Any name they like.)
    - **Name your Chief.** What should they call you? (e.g. a nickname; "Chief" is fine.)
    - Their name, what they do, and who it is for (business, job or personal).
